@@ -27,6 +27,29 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [session, setSession] = useState<SessionData | null>(null);
 
+  // Theme state ('light' | 'dark')
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('voccrab_theme');
+    if (saved === 'dark' || saved === 'light') return saved;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('voccrab_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   // Practice state
   const [isPracticeActive, setIsPracticeActive] = useState(false);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>('random');
@@ -240,8 +263,8 @@ export default function App() {
   const accuracyPercent = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#F6F5FB] text-[#1E1B2E] flex flex-col font-sans selection:bg-[#7C3AED] selection:text-white">
-      {!isPracticeActive && <Header />}
+    <div className="min-h-screen bg-[#F6F5FB] dark:bg-slate-950 text-[#1E1B2E] dark:text-slate-100 flex flex-col font-sans selection:bg-[#7C3AED] selection:text-white transition-colors">
+      {!isPracticeActive && <Header theme={theme} onToggleTheme={toggleTheme} />}
 
       <main className={`flex-1 w-full mx-auto ${isPracticeActive ? 'p-0' : 'max-w-md px-4 py-5 pb-28'}`}>
         {isPracticeActive && currentWord ? (
@@ -328,6 +351,8 @@ export default function App() {
         onRestoreComplete={reloadData}
         onOpenImportModal={() => setIsImportModalOpen(true)}
         onOpenSentenceModal={() => setIsSentenceModalOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
     </div>
   );

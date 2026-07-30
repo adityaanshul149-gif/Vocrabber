@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { StorageService } from '../services/storage';
 import { FullBackup, IntegrityReport } from '../types';
-import { X, Download, Upload, ShieldCheck, Database, PlusCircle, FileText, Sparkles } from 'lucide-react';
+import { X, Download, Upload, ShieldCheck, Database, PlusCircle, FileText, Sparkles, Sun, Moon } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -9,6 +9,8 @@ interface SettingsModalProps {
   onRestoreComplete: () => void;
   onOpenImportModal?: () => void;
   onOpenSentenceModal?: () => void;
+  theme?: 'light' | 'dark';
+  onToggleTheme?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -16,7 +18,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onRestoreComplete,
   onOpenImportModal,
-  onOpenSentenceModal
+  onOpenSentenceModal,
+  theme = 'light',
+  onToggleTheme
 }) => {
   const [integrityReport, setIntegrityReport] = useState<IntegrityReport | null>(null);
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(
@@ -91,25 +95,74 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-purple-100 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto font-sans">
+      <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-2xl bg-purple-100 dark:bg-purple-900/60 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold">
               ⚙️
             </div>
             <div>
-              <h2 className="text-xl font-bold font-display text-slate-900">App Settings</h2>
-              <p className="text-xs text-slate-500">Vocabulary & System Configuration</p>
+              <h2 className="text-xl font-bold font-display text-slate-900 dark:text-white">App Settings</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Vocabulary & System Configuration</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Appearance Theme Selector */}
+        <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 p-4 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              {theme === 'dark' ? <Moon className="w-4 h-4 text-purple-400" /> : <Sun className="w-4 h-4 text-amber-500" />}
+              Appearance Theme
+            </h3>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/80 text-purple-800 dark:text-purple-200">
+              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            Switch theme for comfortable viewing on mobile and desktop screens.
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                if (theme !== 'light' && onToggleTheme) onToggleTheme();
+              }}
+              className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                theme === 'light'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Sun className="w-4 h-4 text-amber-400" />
+              Light Mode
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (theme !== 'dark' && onToggleTheme) onToggleTheme();
+              }}
+              className={`py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                theme === 'dark'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Moon className="w-4 h-4 text-purple-400" />
+              Dark Mode
+            </button>
+          </div>
         </div>
 
         {/* Vocabulary Management Section */}

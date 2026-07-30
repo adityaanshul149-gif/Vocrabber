@@ -35,7 +35,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 }) => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchTarget, setSearchTarget] = useState<'all' | 'word' | 'definition' | 'example' | 'sector' | 'id'>('all');
 
   // Filter state
   const [sectorFilter, setSectorFilter] = useState('all');
@@ -65,6 +64,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [activeDetailWord, setActiveDetailWord] = useState<VocabularyRecord | null>(null);
   const [copyNotice, setCopyNotice] = useState(false);
 
+  // Dynamically extract unique existing sectors from loaded vocabulary
+  const availableSectors = useMemo(() => {
+    const sectorsSet = new Set<string>();
+    vocabulary.forEach(item => {
+      if (item.sector) sectorsSet.add(item.sector);
+    });
+    return Array.from(sectorsSet).sort();
+  }, [vocabulary]);
+
   // Quick lookup map for progress
   const progressMap = useMemo(
     () => new Map<string, ProgressRecord>(progress.map(p => [p.vocabularyId, p])),
@@ -79,28 +87,20 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       const attempts = p ? p.attempts : 0;
       const accuracy = p ? p.accuracy : 0;
 
+      // Sector Filter
+      if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false;
+
       // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        if (searchTarget === 'word' && !item.word.toLowerCase().includes(q)) return false;
-        if (searchTarget === 'definition' && !item.definition.toLowerCase().includes(q)) return false;
-        if (searchTarget === 'example' && !item.exampleUsage.toLowerCase().includes(q)) return false;
-        if (searchTarget === 'sector' && !item.sector.toLowerCase().includes(q)) return false;
-        if (searchTarget === 'id' && !item.id.toLowerCase().includes(q)) return false;
-
-        if (searchTarget === 'all') {
-          const match =
-            item.word.toLowerCase().includes(q) ||
-            item.definition.toLowerCase().includes(q) ||
-            item.exampleUsage.toLowerCase().includes(q) ||
-            item.sector.toLowerCase().includes(q) ||
-            item.id.toLowerCase().includes(q);
-          if (!match) return false;
-        }
+        const match =
+          item.word.toLowerCase().includes(q) ||
+          item.definition.toLowerCase().includes(q) ||
+          item.exampleUsage.toLowerCase().includes(q) ||
+          item.sector.toLowerCase().includes(q) ||
+          item.id.toLowerCase().includes(q);
+        if (!match) return false;
       }
-
-      // Sector Filter
-      if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false;
 
       // Status Filter
       if (statusFilter !== 'all') {
@@ -136,7 +136,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     vocabulary,
     progressMap,
     searchQuery,
-    searchTarget,
     sectorFilter,
     statusFilter,
     encounteredFilter,
@@ -304,15 +303,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 font-sans max-w-md mx-auto">
-      {/* Search Bar & Target Selector Card */}
-      <div className="bg-white border border-purple-100 rounded-3xl p-4 space-y-3 shadow-xs">
+      {/* Search Bar & Sector Filter Card */}
+      <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl p-4 space-y-3 shadow-xs transition-colors">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-purple-700 uppercase tracking-wide flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-purple-600" />
+          <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             Library Filters
           </span>
-          <span className="text-xs text-slate-500 font-semibold">
-            <strong className="text-purple-700 font-extrabold">{sortedVocabulary.length}</strong> / {vocabulary.length} Words
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+            <strong className="text-purple-700 dark:text-purple-300 font-extrabold">{sortedVocabulary.length}</strong> / {vocabulary.length} Words
           </span>
         </div>
 
@@ -324,14 +323,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               type="search"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search words, definitions, sectors..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-10 pr-8 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-500 font-medium"
+              placeholder="Search words, definitions, examples..."
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-10 pr-8 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 font-medium"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -339,25 +338,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Search Target */}
+            {/* Sector Filter Dropdown (Shows ONLY Existing Sectors) */}
             <select
-              value={searchTarget}
-              onChange={e => setSearchTarget(e.target.value as unknown as typeof searchTarget)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-purple-500"
+              value={sectorFilter}
+              onChange={e => setSectorFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none focus:border-purple-500"
             >
-              <option value="all">All Fields</option>
-              <option value="word">Word Only</option>
-              <option value="definition">Definition</option>
-              <option value="example">Example</option>
-              <option value="sector">Sector</option>
-              <option value="id">Word ID</option>
+              <option value="all">All Sectors ({availableSectors.length})</option>
+              {availableSectors.map(sec => (
+                <option key={sec} value={sec}>
+                  {sec}
+                </option>
+              ))}
             </select>
 
             {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-purple-500"
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
             >
               <option value="all">All Statuses</option>
               <option value="never">Never Practiced</option>
@@ -369,13 +368,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
 
         {/* Sorting Row & Selection Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Sort:</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sort:</span>
             <select
               value={sortKey}
               onChange={e => setSortKey(e.target.value as unknown as typeof sortKey)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs text-slate-700 font-medium focus:outline-none focus:border-purple-500"
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
             >
               <option value="word-asc">Alphabetical (A - Z)</option>
               <option value="word-desc">Alphabetical (Z - A)</option>
@@ -391,9 +390,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <button
               type="button"
               onClick={handleToggleSelectAll}
-              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
             >
-              {isAllVisibleSelected ? <CheckSquare className="w-3.5 h-3.5 text-purple-600" /> : <Square className="w-3.5 h-3.5" />}
+              {isAllVisibleSelected ? <CheckSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> : <Square className="w-3.5 h-3.5" />}
               {isAllVisibleSelected ? 'Deselect' : 'Select All'}
             </button>
           </div>
@@ -441,7 +440,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       {/* Vocabulary Cards List */}
       <div className="space-y-2.5">
         {sortedVocabulary.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 text-center text-slate-400 border border-slate-100 text-xs font-medium">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-800 text-xs font-medium">
             No matching vocabulary records found.
           </div>
         ) : (
@@ -455,8 +454,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 key={item.id}
                 className={`p-4 rounded-2xl border transition-all ${
                   isSelected
-                    ? 'bg-purple-50/80 border-purple-400 shadow-sm'
-                    : 'bg-white border-slate-100 hover:border-purple-200 shadow-2xs'
+                    ? 'bg-purple-50/80 dark:bg-purple-950/60 border-purple-400 dark:border-purple-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:border-purple-200 dark:hover:border-slate-700 shadow-2xs'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -471,11 +470,11 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setActiveDetailWord(item)}
-                        className="text-base font-extrabold text-slate-900 capitalize hover:text-purple-600 text-left cursor-pointer"
+                        className="text-base font-extrabold text-slate-900 dark:text-white capitalize hover:text-purple-600 dark:hover:text-purple-400 text-left cursor-pointer"
                       >
                         {item.word}
                       </button>
-                      <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                         {item.definition}
                       </p>
                     </div>
@@ -484,25 +483,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                   <span
                     className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
                       state === 'Mastered'
-                        ? 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
                         : state === 'Needs Work'
-                        ? 'bg-rose-100 text-rose-800'
+                        ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300'
                         : state === 'Learning'
-                        ? 'bg-purple-100 text-purple-800'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                     }`}
                   >
                     {state}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <span>Sector: {item.sector}</span>
                   <span>Accuracy: {p ? `${Math.round(p.accuracy * 100)}%` : '0%'} ({p?.attempts || 0} tries)</span>
                   <button
                     type="button"
                     onClick={() => setActiveDetailWord(item)}
-                    className="text-purple-600 hover:underline flex items-center gap-1"
+                    className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
                   >
                     <Eye className="w-3.5 h-3.5" /> Details
                   </button>
