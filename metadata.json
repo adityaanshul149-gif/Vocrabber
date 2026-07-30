@@ -1,0 +1,6 @@
+{
+  "name": "VocCrab",
+  "description": "CAT VARC retrieval practice vocabulary application with adaptive practice, analytics, and library management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
