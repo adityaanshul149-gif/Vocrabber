@@ -70,37 +70,37 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F5FB] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto pb-8 transition-colors">
+    <div className="min-h-screen bg-[#FFFDF5] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col justify-between p-4 sm:p-6 max-w-md mx-auto pb-8 transition-colors">
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between border-b border-purple-100 dark:border-slate-800 pb-3 mb-4">
+      <div className="flex items-center justify-between border-b-2.5 border-black dark:border-slate-800 pb-3 mb-4">
         <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-purple-500" /> {modeTitle} Mode
+          <span className="text-[10px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-400 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 stroke-[2.5]" /> {modeTitle} Mode
           </span>
-          <h1 className="text-lg font-black font-display text-slate-900 dark:text-white leading-tight">
+          <h1 className="text-lg font-black font-display uppercase tracking-tight text-slate-900 dark:text-white leading-tight">
             Select 2 Correct Usages
           </h1>
         </div>
         <button
           type="button"
           onClick={onEndPractice}
-          className="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/80 border border-rose-200/80 dark:border-rose-800 text-rose-600 dark:text-rose-300 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors"
+          className="px-3 py-1.5 rounded-xl bg-[#FF6B6B] hover:bg-[#FF5252] text-black border-2 border-black text-xs font-black flex items-center gap-1 cursor-pointer shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0px_0px_0px_0px_#000] transition-all"
         >
-          <LogOut className="w-3.5 h-3.5" />
+          <LogOut className="w-3.5 h-3.5 stroke-[2.5]" />
           Exit Session
         </button>
       </div>
 
       {/* Target Word Hero Display */}
-      <div className="bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 text-white rounded-3xl p-5 text-center shadow-lg shadow-purple-600/20 space-y-1.5 mb-4 relative overflow-hidden">
-        <span className="text-[11px] font-medium text-purple-200 uppercase tracking-wide block">
+      <div className="bg-[#FFE600] dark:bg-purple-900 text-black dark:text-white rounded-2xl p-5 text-center border-3 border-black dark:border-white shadow-[5px_5px_0px_0px_#000] dark:shadow-[5px_5px_0px_0px_#A855F7] space-y-1 mb-4 relative overflow-hidden">
+        <span className="text-[10px] font-black text-black/80 dark:text-purple-200 uppercase tracking-widest block">
           Target Vocabulary Word
         </span>
-        <h2 className="text-3xl font-black font-display tracking-tight text-white capitalize">
+        <h2 className="text-3xl font-black font-display tracking-tight uppercase">
           {currentWord.word}
         </h2>
-        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-[11px] font-bold text-white tracking-wide mt-1">
-          <BookOpen className="w-3 h-3 text-yellow-300" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-black text-white dark:bg-white dark:text-black text-[11px] font-black uppercase tracking-wide mt-1">
+          <BookOpen className="w-3.5 h-3.5 text-amber-300 dark:text-purple-600 stroke-[2.5]" />
           Sector: {currentWord.sector}
         </div>
       </div>
@@ -112,18 +112,18 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({
           const isTrueSentence = sentence.correct;
 
           let cardStyle =
-            'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-slate-800/80';
+            'bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white text-slate-900 dark:text-slate-100 shadow-[3px_3px_0px_0px_#000] dark:shadow-[3px_3px_0px_0px_#334155] hover:bg-purple-50 dark:hover:bg-slate-800';
 
           if (isAnswered) {
             if (isTrueSentence) {
-              cardStyle = 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 dark:border-emerald-400 text-emerald-950 dark:text-emerald-100 font-bold shadow-xs';
+              cardStyle = 'bg-[#4ADE80] text-black border-2.5 border-black font-black shadow-[3px_3px_0px_0px_#000]';
             } else if (isSelected && !isTrueSentence) {
-              cardStyle = 'bg-rose-50 dark:bg-rose-950/80 border-rose-400 dark:border-rose-500 text-rose-950 dark:text-rose-100 font-semibold';
+              cardStyle = 'bg-[#FF6B6B] text-black border-2.5 border-black font-black shadow-[3px_3px_0px_0px_#000]';
             } else {
-              cardStyle = 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-50';
+              cardStyle = 'bg-slate-100 dark:bg-slate-900/40 border-2 border-slate-300 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-40 shadow-none';
             }
           } else if (isSelected) {
-            cardStyle = 'bg-purple-50 dark:bg-purple-950/70 border-purple-600 dark:border-purple-400 text-purple-950 dark:text-purple-100 shadow-md shadow-purple-500/10 font-bold';
+            cardStyle = 'bg-[#FFE600] text-black border-2.5 border-black font-black shadow-[4px_4px_0px_0px_#000]';
           }
 
           return (
@@ -132,16 +132,16 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({
               type="button"
               disabled={isAnswered}
               onClick={() => toggleSentence(originalIdx)}
-              className={`w-full text-left p-4 rounded-2xl border text-sm sm:text-base font-semibold font-sans leading-relaxed transition-all duration-200 flex items-start gap-3.5 cursor-pointer ${cardStyle}`}
+              className={`w-full text-left p-4 rounded-2xl border-2.5 text-sm sm:text-base font-bold font-sans leading-relaxed transition-all duration-150 flex items-start gap-3.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 ${cardStyle}`}
             >
               <div
-                className={`w-5 h-5 rounded-lg border shrink-0 flex items-center justify-center mt-0.5 transition-all ${
+                className={`w-6 h-6 rounded-lg border-2 border-black shrink-0 flex items-center justify-center mt-0.5 font-black transition-all ${
                   isSelected
-                    ? 'bg-purple-600 border-purple-600 text-white font-bold'
-                    : 'border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-slate-400'
                 }`}
               >
-                {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
               </div>
               <span className="leading-relaxed flex-1 tracking-normal">{sentence.text}</span>
             </button>
@@ -155,49 +155,49 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({
           type="button"
           disabled={selectedIndices.size !== 2}
           onClick={handleSubmit}
-          className="w-full py-4 bg-purple-600 disabled:opacity-40 disabled:hover:bg-purple-600 text-white font-extrabold font-display text-base tracking-wide rounded-2xl shadow-lg shadow-purple-600/30 hover:bg-purple-700 active:scale-[0.98] transition-all cursor-pointer"
+          className="w-full py-4 bg-[#A855F7] disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-400 disabled:shadow-none hover:bg-[#9333EA] text-white font-black font-display text-base tracking-wider uppercase rounded-2xl border-3 border-black shadow-[4px_4px_0px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0px_0px_#000] transition-all cursor-pointer"
         >
           SUBMIT SELECTION ({selectedIndices.size}/2)
         </button>
       ) : (
         /* Feedback Card Banner */
-        <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl animate-in fade-in">
-          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white rounded-2xl p-5 space-y-4 shadow-[5px_5px_0px_0px_#000] dark:shadow-[5px_5px_0px_0px_#A855F7] animate-in fade-in">
+          <div className="flex items-center gap-3 border-b-2 border-black dark:border-slate-800 pb-3">
             {isCorrect ? (
-              <div className="w-9 h-9 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-[#4ADE80] border-2 border-black text-black flex items-center justify-center font-black">
+                <CheckCircle2 className="w-6 h-6 stroke-[2.5]" />
               </div>
             ) : (
-              <div className="w-9 h-9 rounded-2xl bg-rose-100 dark:bg-rose-950/80 text-rose-500 dark:text-rose-300 flex items-center justify-center">
-                <X className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-[#FF6B6B] border-2 border-black text-black flex items-center justify-center font-black">
+                <X className="w-6 h-6 stroke-[2.5]" />
               </div>
             )}
             <div>
               <span
-                className={`text-base font-extrabold font-display block leading-tight ${
-                  isCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
+                className={`text-base font-black font-display uppercase block leading-tight ${
+                  isCorrect ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {isCorrect ? 'Awesome! Correct Answer 🎉' : 'Needs Review 💡'}
               </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                {isCorrect ? 'You accurately retrieved the word meanings.' : 'Review correct usage highlighted in green above.'}
+              <p className="text-[11px] text-slate-700 dark:text-slate-300 font-bold">
+                {isCorrect ? 'You accurately retrieved the word meanings.' : 'Review correct usage highlighted above.'}
               </p>
             </div>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="bg-purple-50/60 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-100 dark:border-purple-900/60">
-              <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide block">
+            <div className="bg-[#FFE600]/30 dark:bg-purple-950/50 p-3 rounded-xl border-2 border-black dark:border-slate-700">
+              <span className="text-[10px] font-black text-black dark:text-purple-300 uppercase tracking-wide block">
                 Definition
               </span>
               <p className="text-slate-900 dark:text-slate-100 font-bold mt-0.5">{currentWord.definition}</p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">
+            <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl border-2 border-black dark:border-slate-700">
+              <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wide block">
                 Example Usage
               </span>
-              <p className="text-slate-800 dark:text-slate-200 italic font-medium mt-0.5">"{currentWord.exampleUsage}"</p>
+              <p className="text-slate-900 dark:text-slate-200 italic font-bold mt-0.5">"{currentWord.exampleUsage}"</p>
             </div>
           </div>
 
@@ -209,19 +209,19 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({
                   setSelectedIndices(new Set());
                   setIsAnswered(false);
                 }}
-                className="w-full py-3 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-2xl cursor-pointer border border-purple-200 dark:border-purple-800 transition-all"
+                className="w-full py-3.5 bg-[#FFC72C] hover:bg-[#FFB700] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-xl border-2.5 border-black shadow-[3px_3px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none cursor-pointer transition-all"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-4 h-4 stroke-[2.5]" />
                 TRY AGAIN
               </button>
             ) : (
               <button
                 type="button"
                 onClick={onNextWord}
-                className="w-full py-3.5 bg-purple-600 text-white font-extrabold font-display text-base tracking-wide rounded-2xl hover:bg-purple-700 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-purple-600/30 active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-[#A855F7] hover:bg-[#9333EA] text-white font-black font-display text-base tracking-wider uppercase rounded-xl border-3 border-black flex items-center justify-center gap-2 cursor-pointer shadow-[4px_4px_0px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
               >
                 NEXT WORD
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </button>
             )}
           </div>

@@ -2,7 +2,7 @@
 
 @layer utilities {
   .font-display {
-    font-family: 'Outfit', sans-serif;
+    font-family: 'Space Grotesk', 'Outfit', sans-serif;
   }
   .font-sans {
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -14,36 +14,67 @@
 }
 
 body {
-  background-color: #F6F5FB;
-  color: #1E1B2E;
+  background-color: #FFFDF5;
+  color: #0F172A;
   font-family: 'Plus Jakarta Sans', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Material 3 Expressive smooth shadows */
-.m3-card {
-  background-color: #FFFFFF;
-  border-radius: 1.5rem; /* 24px */
-  box-shadow: 0 4px 20px -2px rgba(99, 91, 255, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+.dark body {
+  background-color: #0F172A;
+  color: #F8FAFC;
 }
 
-.m3-card:hover {
-  box-shadow: 0 8px 30px -4px rgba(99, 91, 255, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+/* Neobrutalism Utility Classes */
+.neo-box {
+  border: 2.5px solid #000000;
+  box-shadow: 4px 4px 0px #000000;
+  transition: all 0.15s ease-in-out;
+}
+
+.dark .neo-box {
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 4px 4px 0px #A855F7;
+}
+
+.neo-btn {
+  border: 2.5px solid #000000;
+  box-shadow: 3.5px 3.5px 0px #000000;
+  font-weight: 800;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.neo-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+.dark .neo-btn {
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 3.5px 3.5px 0px #A855F7;
+}
+
+.dark .neo-btn:active {
+  box-shadow: 1px 1px 0px #A855F7 !important;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #FEF08A;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #1E293B;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.2);
-  border-radius: 9999px;
+  background: #000000;
+  border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 58, 237, 0.5);
+.dark ::-webkit-scrollbar-thumb {
+  background: #A855F7;
+  border-radius: 4px;
 }

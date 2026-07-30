@@ -8,22 +8,22 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ theme = 'light', onToggleTheme }) => {
   return (
-    <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-purple-100/80 dark:border-slate-800 sticky top-0 z-40 shadow-xs transition-colors">
-      <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+    <header className="bg-[#FFE600] dark:bg-purple-950 border-b-3 border-black dark:border-white sticky top-0 z-40 transition-colors shadow-[0px_4px_0px_0px_#000] dark:shadow-[0px_4px_0px_0px_#A855F7]">
+      <div className="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/20 text-xl font-bold">
+          <div className="w-10 h-10 rounded-xl bg-purple-600 text-white border-2 border-black dark:border-white shadow-[2.5px_2.5px_0px_0px_#000] dark:shadow-[2.5px_2.5px_0px_0px_#FFF] flex items-center justify-center text-xl font-black">
             🦀
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-xl font-extrabold font-display tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-xl font-black font-display tracking-tight text-black dark:text-white uppercase">
                 VocCrab
               </h1>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300">
-                v1.5
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-black text-amber-300 border border-black dark:bg-white dark:text-black">
+                PRO
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">CAT VARC Vocabulary</p>
+            <p className="text-[11px] text-black/80 dark:text-purple-200 font-extrabold uppercase tracking-wide">CAT VARC Vocabulary</p>
           </div>
         </div>
 
@@ -33,19 +33,19 @@ export const Header: React.FC<HeaderProps> = ({ theme = 'light', onToggleTheme }
               type="button"
               onClick={onToggleTheme}
               aria-label="Toggle dark mode"
-              className="p-2 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-black dark:border-white shadow-[2.5px_2.5px_0px_0px_#000] dark:shadow-[2.5px_2.5px_0px_0px_#A855F7] text-black dark:text-white active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all cursor-pointer font-bold"
             >
               {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400" />
+                <Sun className="w-4 h-4 text-amber-400 stroke-[2.5]" />
               ) : (
-                <Moon className="w-4 h-4 text-slate-700" />
+                <Moon className="w-4 h-4 text-slate-900 stroke-[2.5]" />
               )}
             </button>
           )}
 
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 text-xs font-semibold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
-            <span>Study Focus</span>
+          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-400 dark:bg-emerald-500 text-black border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] text-xs font-black">
+            <Sparkles className="w-3.5 h-3.5 text-black stroke-[3] animate-pulse" />
+            <span className="uppercase tracking-wide">CAT Mode</span>
           </div>
         </div>
       </div>

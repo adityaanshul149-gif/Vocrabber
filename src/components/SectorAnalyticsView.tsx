@@ -145,11 +145,11 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
   return (
     <div className="space-y-4 font-sans max-w-md mx-auto">
       {/* Controls Bar */}
-      <div className="grid grid-cols-2 gap-2 bg-white border border-purple-100 rounded-3xl p-3 shadow-2xs">
+      <div className="grid grid-cols-2 gap-2 bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7]">
         <select
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-2xl px-2.5 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:border-purple-500"
+          className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600 uppercase"
         >
           <option value="all">ALL SECTORS</option>
           <option value="attention">NEEDS ATTENTION</option>
@@ -160,7 +160,7 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
         <select
           value={sort}
           onChange={e => setSort(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-2xl px-2.5 py-2 text-xs text-slate-700 font-bold focus:outline-none focus:border-purple-500"
+          className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600 uppercase"
         >
           <option value="alphabetical">ALPHABETICAL</option>
           <option value="accuracy">ACCURACY</option>
@@ -170,15 +170,15 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
       </div>
 
       {actionMessage && (
-        <p className="text-xs text-purple-800 bg-purple-50 border border-purple-200 rounded-2xl p-3 font-semibold">
-          ✨ {actionMessage}
+        <p className="text-xs text-black bg-[#FFE600] border-2 border-black rounded-xl p-3 font-black uppercase shadow-[2px_2px_0px_0px_#000]">
+          ⚡ {actionMessage}
         </p>
       )}
 
       {/* Sector Cards Stack */}
       <div className="space-y-3">
         {filteredSectors.length === 0 ? (
-          <div className="text-center p-8 text-slate-400 text-xs bg-white rounded-3xl border border-slate-100 font-medium">
+          <div className="text-center p-8 text-slate-700 dark:text-slate-300 text-xs bg-white dark:bg-slate-900 rounded-2xl border-2.5 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] font-black uppercase">
             No sectors match current filter options.
           </div>
         ) : (
@@ -189,54 +189,54 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
             return (
               <div
                 key={stats.name}
-                className="bg-white border border-purple-100 rounded-3xl p-4 space-y-3 shadow-2xs hover:border-purple-300 transition-all"
+                className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold font-display text-slate-900 text-base">{stats.name}</h3>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full">
-                    {Math.round(stats.accuracy)}%
+                  <h3 className="font-black font-display text-slate-900 dark:text-white text-base uppercase">{stats.name}</h3>
+                  <span className="text-xs font-black px-2.5 py-1 bg-[#A855F7] text-white border-2 border-black rounded-lg">
+                    {Math.round(stats.accuracy)}% ACC
                   </span>
                 </div>
 
-                <p className="text-xs text-slate-500 font-medium truncate">
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-bold truncate">
                   {sectorWordsList.slice(0, 3).map(w => w.word).join(' · ') || 'No words'}
                 </p>
 
-                <div className="flex items-center justify-between text-xs text-slate-400 font-medium pt-2 border-t border-slate-100">
-                  <span>
-                    {stats.total} words · {Math.round(stats.progressPercent)}% encountered
+                <div className="flex items-center justify-between text-xs text-black dark:text-slate-400 font-bold pt-2 border-t-2 border-black/10 dark:border-slate-800">
+                  <span className="uppercase">
+                    {stats.total} words · {Math.round(stats.progressPercent)}% seen
                   </span>
                   <button
                     type="button"
                     onClick={() => setExpandedSector(isExpanded ? null : stats.name)}
-                    className="text-purple-600 hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+                    className="text-black dark:text-white font-black underline text-xs flex items-center gap-1 cursor-pointer"
                   >
                     {isExpanded ? (
                       <>
-                        Collapse <ChevronUp className="w-3.5 h-3.5" />
+                        Collapse <ChevronUp className="w-3.5 h-3.5 stroke-[2.5]" />
                       </>
                     ) : (
                       <>
-                        View Details <ChevronDown className="w-3.5 h-3.5" />
+                        Details <ChevronDown className="w-3.5 h-3.5 stroke-[2.5]" />
                       </>
                     )}
                   </button>
                 </div>
 
                 {isExpanded && (
-                  <div className="pt-3 border-t border-slate-100 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 bg-purple-50/60 p-3 rounded-2xl text-center text-xs">
+                  <div className="pt-3 border-t-2 border-black dark:border-slate-800 space-y-3">
+                    <div className="grid grid-cols-3 gap-2 bg-[#FFE600]/20 dark:bg-slate-800 p-3 rounded-xl border-2 border-black dark:border-slate-700 text-center text-xs">
                       <div>
-                        <span className="text-slate-500 block text-[10px] font-bold uppercase">Total</span>
-                        <strong className="text-slate-900 font-extrabold">{stats.total}</strong>
+                        <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">Total</span>
+                        <strong className="text-slate-900 dark:text-white font-black">{stats.total}</strong>
                       </div>
                       <div>
-                        <span className="text-emerald-700 block text-[10px] font-bold uppercase">Mastered</span>
-                        <strong className="text-emerald-700 font-extrabold">{stats.mastered}</strong>
+                        <span className="text-emerald-700 dark:text-emerald-400 block text-[10px] font-black uppercase">Mastered</span>
+                        <strong className="text-emerald-700 dark:text-emerald-400 font-black">{stats.mastered}</strong>
                       </div>
                       <div>
-                        <span className="text-rose-700 block text-[10px] font-bold uppercase">Needs Work</span>
-                        <strong className="text-rose-700 font-extrabold">{stats.needsWork}</strong>
+                        <span className="text-rose-700 dark:text-rose-400 block text-[10px] font-black uppercase">Needs Work</span>
+                        <strong className="text-rose-700 dark:text-rose-400 font-black">{stats.needsWork}</strong>
                       </div>
                     </div>
 
@@ -249,7 +249,11 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
                         return (
                           <label
                             key={w.id}
-                            className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 bg-slate-50 text-xs cursor-pointer hover:border-purple-200"
+                            className={`flex items-center justify-between p-2.5 rounded-xl border-2 text-xs cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-[#FFE600] text-black border-black font-black'
+                                : 'bg-slate-50 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold'
+                            }`}
                           >
                             <div className="flex items-center gap-2">
                               <input
@@ -261,39 +265,39 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
                                   else next.add(w.id);
                                   setSelectedWordIds(next);
                                 }}
-                                className="accent-purple-600 w-4 h-4 cursor-pointer"
+                                className="accent-black w-4 h-4 cursor-pointer"
                               />
-                              <span className="font-bold text-slate-900 capitalize">{w.word}</span>
+                              <span className="font-black uppercase">{w.word}</span>
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500">{state}</span>
+                            <span className="text-[10px] font-black uppercase">{state}</span>
                           </label>
                         );
                       })}
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t-2 border-black dark:border-slate-800 text-xs">
                       <button
                         type="button"
                         onClick={() => handleCopySector(sectorWordsList, stats.name)}
-                        className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-[#FFE600] text-black font-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3.5 h-3.5 stroke-[2.5]" />
                         Copy
                       </button>
                       <button
                         type="button"
                         onClick={() => handleExportSector(sectorWordsList, stats.name)}
-                        className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-white text-black font-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
                       >
-                        <Download className="w-3.5 h-3.5" />
+                        <Download className="w-3.5 h-3.5 stroke-[2.5]" />
                         Export
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeleteWords(Array.from(selectedWordIds))}
-                        className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl flex items-center gap-1 cursor-pointer"
+                        className="px-3 py-1.5 bg-[#FF6B6B] text-black font-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
                         Delete
                       </button>
                     </div>

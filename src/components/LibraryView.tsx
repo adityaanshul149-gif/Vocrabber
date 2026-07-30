@@ -304,35 +304,35 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   return (
     <div className="space-y-4 font-sans max-w-md mx-auto">
       {/* Search Bar & Sector Filter Card */}
-      <div className="bg-white dark:bg-slate-900 border border-purple-100 dark:border-slate-800 rounded-3xl p-4 space-y-3 shadow-xs transition-colors">
+      <div className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+          <span className="text-xs font-black text-black dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+            <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400 stroke-[2.5]" />
             Library Filters
           </span>
-          <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
-            <strong className="text-purple-700 dark:text-purple-300 font-extrabold">{sortedVocabulary.length}</strong> / {vocabulary.length} Words
+          <span className="text-xs text-black dark:text-slate-300 font-bold">
+            <strong className="text-purple-700 dark:text-purple-300 font-black">{sortedVocabulary.length}</strong> / {vocabulary.length} Words
           </span>
         </div>
 
         <div className="space-y-2">
           {/* Query Input */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-black dark:text-slate-400 absolute left-3.5 top-3 stroke-[2.5]" />
             <input
               type="search"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search words, definitions, examples..."
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-10 pr-8 py-2.5 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 font-medium"
+              className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-500 font-bold focus:outline-none focus:border-purple-600"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-3 top-2.5 text-slate-500 hover:text-black dark:hover:text-white"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4 stroke-[2.5]" />
               </button>
             )}
           </div>
@@ -342,7 +342,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <select
               value={sectorFilter}
               onChange={e => setSectorFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-bold focus:outline-none focus:border-purple-500"
+              className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600"
             >
               <option value="all">All Sectors ({availableSectors.length})</option>
               {availableSectors.map(sec => (
@@ -356,7 +356,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
+              className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600"
             >
               <option value="all">All Statuses</option>
               <option value="never">Never Practiced</option>
@@ -368,13 +368,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         </div>
 
         {/* Sorting Row & Selection Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t-2 border-black dark:border-slate-800">
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Sort:</span>
+            <span className="text-[10px] font-black text-black dark:text-slate-400 uppercase">Sort:</span>
             <select
               value={sortKey}
               onChange={e => setSortKey(e.target.value as unknown as typeof sortKey)}
-              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
+              className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2 py-1 text-xs text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-purple-600"
             >
               <option value="word-asc">Alphabetical (A - Z)</option>
               <option value="word-desc">Alphabetical (Z - A)</option>
@@ -390,9 +390,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <button
               type="button"
               onClick={handleToggleSelectAll}
-              className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              className="px-2.5 py-1 bg-[#FFE600] text-black border-2 border-black rounded-xl text-[11px] font-black flex items-center gap-1 cursor-pointer shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
-              {isAllVisibleSelected ? <CheckSquare className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> : <Square className="w-3.5 h-3.5" />}
+              {isAllVisibleSelected ? <CheckSquare className="w-3.5 h-3.5 stroke-[2.5]" /> : <Square className="w-3.5 h-3.5 stroke-[2.5]" />}
               {isAllVisibleSelected ? 'Deselect' : 'Select All'}
             </button>
           </div>
@@ -401,8 +401,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
       {/* Floating Action Bar for Selected Words */}
       {selectedIds.size > 0 && (
-        <div className="bg-purple-600 text-white rounded-2xl p-3 text-xs flex flex-wrap items-center justify-between gap-2 shadow-lg shadow-purple-600/20 animate-in fade-in">
-          <span className="font-extrabold font-display text-sm">
+        <div className="bg-[#A855F7] text-white border-2.5 border-black rounded-2xl p-3 text-xs flex flex-wrap items-center justify-between gap-2 shadow-[4px_4px_0px_0px_#000] animate-in fade-in">
+          <span className="font-black font-display text-sm tracking-wide">
             {selectedIds.size} SELECTED
           </span>
 
@@ -411,9 +411,9 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <button
                 type="button"
                 onClick={handlePracticeSelected}
-                className="px-3 py-1.5 bg-white text-purple-700 font-extrabold text-xs rounded-xl hover:bg-purple-50 flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 bg-[#FFE600] text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
               >
-                <Play className="w-3.5 h-3.5 fill-purple-700" />
+                <Play className="w-3.5 h-3.5 fill-black stroke-[2]" />
                 Practice
               </button>
             )}
@@ -421,26 +421,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             <button
               type="button"
               onClick={handleExportSelected}
-              className="px-2.5 py-1.5 bg-purple-500/80 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 bg-white text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
 
             <button
               type="button"
               onClick={handleDeleteSelected}
-              className="px-2.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 bg-[#FF6B6B] hover:bg-[#FF5252] text-black font-black text-xs rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none flex items-center gap-1 cursor-pointer transition-all"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </div>
         </div>
       )}
 
       {/* Vocabulary Cards List */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         {sortedVocabulary.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 text-center text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-800 text-xs font-medium">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 text-center text-slate-700 dark:text-slate-300 border-2.5 border-black dark:border-white shadow-[4px_4px_0px_0px_#000] text-xs font-black uppercase">
             No matching vocabulary records found.
           </div>
         ) : (
@@ -452,58 +452,58 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             return (
               <div
                 key={item.id}
-                className={`p-4 rounded-2xl border transition-all ${
+                className={`p-4 rounded-2xl border-2.5 border-black dark:border-white transition-all ${
                   isSelected
-                    ? 'bg-purple-50/80 dark:bg-purple-950/60 border-purple-400 dark:border-purple-600 shadow-sm'
-                    : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800/80 hover:border-purple-200 dark:hover:border-slate-700 shadow-2xs'
+                    ? 'bg-[#FFE600] text-black shadow-[4px_4px_0px_0px_#000]'
+                    : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-[3.5px_3.5px_0px_0px_#000] dark:shadow-[3.5px_3.5px_0px_0px_#A855F7]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleSelectOne(item.id)}
-                      className="mt-1 accent-purple-600 w-4 h-4 cursor-pointer rounded-md"
+                      className="mt-1 accent-black w-4 h-4 cursor-pointer rounded border-2 border-black"
                     />
                     <div>
                       <button
                         type="button"
                         onClick={() => setActiveDetailWord(item)}
-                        className="text-base font-extrabold text-slate-900 dark:text-white capitalize hover:text-purple-600 dark:hover:text-purple-400 text-left cursor-pointer"
+                        className="text-base font-black font-display uppercase hover:underline text-left cursor-pointer"
                       >
                         {item.word}
                       </button>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                      <p className="text-xs font-bold opacity-90 line-clamp-1 mt-0.5">
                         {item.definition}
                       </p>
                     </div>
                   </div>
 
                   <span
-                    className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                    className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border border-black ${
                       state === 'Mastered'
-                        ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300'
+                        ? 'bg-[#4ADE80] text-black'
                         : state === 'Needs Work'
-                        ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300'
+                        ? 'bg-[#FF6B6B] text-black'
                         : state === 'Learning'
-                        ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        ? 'bg-[#A855F7] text-white'
+                        : 'bg-slate-200 text-black dark:bg-slate-800 dark:text-white'
                     }`}
                   >
                     {state}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <span>Sector: {item.sector}</span>
-                  <span>Accuracy: {p ? `${Math.round(p.accuracy * 100)}%` : '0%'} ({p?.attempts || 0} tries)</span>
+                <div className="flex items-center justify-between text-[11px] font-bold mt-3 pt-2 border-t-2 border-black/20 dark:border-white/20">
+                  <span className="uppercase">Sector: {item.sector}</span>
+                  <span>Acc: {p ? `${Math.round(p.accuracy * 100)}%` : '0%'} ({p?.attempts || 0} tries)</span>
                   <button
                     type="button"
                     onClick={() => setActiveDetailWord(item)}
-                    className="text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                    className="font-black underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5" /> Details
+                    <Eye className="w-3.5 h-3.5 stroke-[2.5]" /> View
                   </button>
                 </div>
               </div>
