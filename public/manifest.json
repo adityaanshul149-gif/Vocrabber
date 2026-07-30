@@ -1,0 +1,21 @@
+{
+  "short_name": "VocCrab",
+  "name": "VocCrab — CAT VARC Practice",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./",
+  "background_color": "#F6F5FB",
+  "theme_color": "#7C3AED",
+  "display": "standalone",
+  "orientation": "portrait"
+}
