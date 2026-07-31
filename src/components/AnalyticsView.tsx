@@ -1,19 +1,27 @@
 import React from 'react';
-import { VocabularyRecord, ProgressRecord, SessionData } from '../types';
+import { VocabularyRecord, ProgressRecord, SessionData, AppLevel } from '../types';
 import { StorageService } from '../services/storage';
 
 interface AnalyticsViewProps {
   vocabulary: VocabularyRecord[];
   progress: ProgressRecord[];
   session: SessionData | null;
+  appLevel?: AppLevel;
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   vocabulary,
   progress,
-  session
+  session,
+  appLevel = 'lvl1'
 }) => {
+  const isLvl2 = appLevel === 'lvl2';
   const progressMap = new Map<string, ProgressRecord>(progress.map(p => [p.vocabularyId, p]));
+  const progressLvl1Map = new Map<string, ProgressRecord>(StorageService.getProgress('lvl1').map(p => [p.vocabularyId, p]));
+
+  const activeVocab = isLvl2
+    ? vocabulary.filter(v => StorageService.getLearningState(progressLvl1Map.get(v.id) || null) === 'Mastered')
+    : vocabulary;
 
   let totalAttempts = 0;
   let totalCorrect = 0;
@@ -21,7 +29,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   let needsWorkCount = 0;
   let encounteredCount = 0;
 
-  vocabulary.forEach(v => {
+  activeVocab.forEach(v => {
     const p = progressMap.get(v.id) || null;
     const state = StorageService.getLearningState(p);
 
@@ -41,25 +49,43 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     }
   });
 
-  const neverPracticedCount = vocabulary.length - encounteredCount;
+  const neverPracticedCount = activeVocab.length - encounteredCount;
   const overallAccuracy = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
+
+  const getAccuracyColorBg = (acc: number) => {
+    if (acc >= 90) return 'bg-[#4ADE80] text-black';
+    if (acc >= 70) return 'bg-[#FFE600] text-black';
+    return 'bg-[#FF6B6B] text-black';
+  };
 
   const sessionReviewed = session?.reviewedCount || 0;
   const sessionCorrect = session?.correctCount || 0;
   const sessionAccuracy = sessionReviewed > 0 ? (sessionCorrect / sessionReviewed) * 100 : 0;
 
-  const masteringPercent = vocabulary.length > 0 ? (masteredCount / vocabulary.length) * 100 : 0;
+  const masteringPercent = activeVocab.length > 0 ? (masteredCount / activeVocab.length) * 100 : 0;
 
   const recentActivity = session?.sessionStatistics?.recentActivity || [];
 
   return (
     <div className="space-y-4 font-sans max-w-md mx-auto">
+      {/* Level Indicator Banner */}
+      <div className={`p-3 rounded-2xl border-2.5 border-black flex items-center justify-between shadow-[3.5px_3.5px_0px_0px_#000] ${
+        isLvl2 ? 'bg-[#FF2E93] text-white shadow-[3.5px_3.5px_0px_0px_#00F0FF]' : 'bg-[#FFE600] text-black'
+      }`}>
+        <span className="font-black font-display uppercase text-xs tracking-wider">
+          {isLvl2 ? '⚡ LEVEL II Analytics (Definitions Quiz)' : '✨ LEVEL I Analytics (Sentences Practice)'}
+        </span>
+        <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg border border-black bg-white text-black">
+          {isLvl2 ? 'Intense' : 'Standard'}
+        </span>
+      </div>
+
       {/* 6 Top Stat Cards */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-3.5 shadow-[3.5px_3.5px_0px_0px_#000] dark:shadow-[3.5px_3.5px_0px_0px_#A855F7]">
           <span className="text-black dark:text-slate-400 text-[10px] font-black uppercase block">Total Deck</span>
           <strong className="text-2xl font-black font-display text-slate-900 dark:text-white block mt-0.5">
-            {vocabulary.length}
+            {activeVocab.length}
           </strong>
         </div>
         <div className="bg-[#FFE600] text-black border-2.5 border-black rounded-2xl p-3.5 shadow-[3.5px_3.5px_0px_0px_#000]">
@@ -86,7 +112,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             {neverPracticedCount}
           </strong>
         </div>
-        <div className="bg-[#38BDF8] text-black border-2.5 border-black rounded-2xl p-3.5 shadow-[3.5px_3.5px_0px_0px_#000]">
+        <div className={`${getAccuracyColorBg(overallAccuracy)} border-2.5 border-black rounded-2xl p-3.5 shadow-[3.5px_3.5px_0px_0px_#000]`}>
           <span className="text-black/80 text-[10px] font-black uppercase block">Accuracy</span>
           <strong className="text-2xl font-black font-display text-black block mt-0.5">
             {Math.round(overallAccuracy)}%

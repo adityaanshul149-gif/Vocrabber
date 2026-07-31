@@ -200,6 +200,134 @@ export class VocabularyService {
     };
   }
 
+  public static parseAndMergeLevel2Pack(text: string): { processed: number; updated: number; unknownIds: string[]; errors: string[] } {
+    const raw = String(text || '').replace(/^\uFEFF/, '').trim();
+    if (!raw) return { processed: 0, updated: 0, unknownIds: [], errors: ['No data was pasted.'] };
+
+    const lines = raw.split(/\r\n|\n|\r/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return { processed: 0, updated: 0, unknownIds: [], errors: ['No valid rows found.'] };
+
+    const current = StorageService.getVocabulary();
+    const mapById = new Map(current.map(r => [r.id.toLowerCase(), r]));
+    const mapByWord = new Map(current.map(r => [r.word.toLowerCase(), r]));
+
+    let updated = 0;
+    const unknownIds: string[] = [];
+    const errors: string[] = [];
+    let processed = 0;
+
+    lines.forEach((line, idx) => {
+      if (idx === 0 && (line.toLowerCase().startsWith('id|') || line.toLowerCase().startsWith('word|') || line.toLowerCase().startsWith('id '))) {
+        return;
+      }
+      processed++;
+
+      // Check if line contains pipe or semicolon format:
+      // Format 1: ID | Option1 ; Option2 ; Option3 ; Option4 ; Option5
+      // Format 2: ID | Word | Option1 ; Option2 ; Option3 ; Option4 ; Option5
+      // Format 3: ID | Word | Definition | Distractor1 | Distractor2 | Distractor3 | Distractor4
+
+      const pipeParts = line.split('|').map(p => p.trim());
+      
+      if (pipeParts.length < 2) {
+        errors.push(`Row ${idx + 1}: Line contains fewer than 2 fields.`);
+        return;
+      }
+
+      const idOrWordCandidate = pipeParts[0];
+      const secondCandidate = pipeParts[1];
+
+      let target = mapById.get(idOrWordCandidate.toLowerCase()) || 
+                   mapByWord.get(idOrWordCandidate.toLowerCase()) || 
+                   mapByWord.get(secondCandidate.toLowerCase());
+
+      if (!target) {
+        unknownIds.push(idOrWordCandidate);
+        return;
+      }
+
+      // Check if second field or third field contains semicolon separated options
+      let optionsCandidate = pipeParts.slice(1).join(' | ');
+      if (pipeParts.length > 2 && mapByWord.get(secondCandidate.toLowerCase())) {
+        optionsCandidate = pipeParts.slice(2).join(' | ');
+      }
+
+      if (optionsCandidate.includes(';')) {
+        const semicolonOptions = optionsCandidate.split(';').map(o => o.trim()).filter(Boolean);
+        if (semicolonOptions.length >= 5) {
+          // 1 exact meaning + 4 distractors
+          target.definition = semicolonOptions[0];
+          target.level2Distractors = semicolonOptions.slice(1, 5);
+        } else if (semicolonOptions.length >= 4) {
+          target.level2Distractors = semicolonOptions.slice(0, 4);
+        } else {
+          target.level2Distractors = semicolonOptions;
+        }
+      } else {
+        // Standard pipe format
+        let remaining = pipeParts.slice(2);
+        if (remaining.length >= 5) {
+          target.definition = remaining[0];
+          target.level2Distractors = remaining.slice(1, 5);
+        } else if (remaining.length >= 4) {
+          target.level2Distractors = remaining.slice(0, 4);
+        } else if (remaining.length > 0) {
+          target.level2Distractors = remaining;
+        }
+      }
+
+      target.updatedAt = new Date().toISOString();
+      updated++;
+    });
+
+    const uniqueVocabulary = Array.from(new Set(current));
+    StorageService.setVocabulary(uniqueVocabulary);
+    return { processed, updated, unknownIds, errors };
+  }
+
+  public static exportCustomColumnsPipeFormat(records: VocabularyRecord[], columns: string[]): string {
+    if (columns.length === 0) return '';
+
+    // Build header line
+    const headerParts: string[] = [];
+    columns.forEach(col => {
+      if (col === 'sentences') {
+        headerParts.push('s1', 's1_true', 's2', 's2_true', 's3', 's3_true', 's4', 's4_true', 's5', 's5_true', 's6', 's6_true');
+      } else if (col === 'level2Distractors') {
+        headerParts.push('distractor1', 'distractor2', 'distractor3', 'distractor4');
+      } else {
+        headerParts.push(col);
+      }
+    });
+
+    const header = headerParts.join('|');
+
+    const rows = records.map(r => {
+      const rowParts: string[] = [];
+      columns.forEach(col => {
+        if (col === 'id') rowParts.push(r.id);
+        else if (col === 'word') rowParts.push(r.word);
+        else if (col === 'sector') rowParts.push(r.sector);
+        else if (col === 'definition') rowParts.push(r.definition);
+        else if (col === 'exampleUsage') rowParts.push(r.exampleUsage);
+        else if (col === 'sentences') {
+          (r.sentences || []).forEach(s => {
+            rowParts.push(s.text);
+            rowParts.push(s.correct ? 'TRUE' : 'FALSE');
+          });
+        } else if (col === 'level2Distractors') {
+          const d = r.level2Distractors || [];
+          for (let i = 0; i < 4; i++) {
+            rowParts.push(d[i] || '');
+          }
+        }
+      });
+      return rowParts.join('|');
+    });
+
+    return [header, ...rows].join('\n');
+  }
+
   public static exportToPipeFormat(records: VocabularyRecord[]): string {
     const header = [
       'id', 'word', 'sector', 'definition', 'example_usage',

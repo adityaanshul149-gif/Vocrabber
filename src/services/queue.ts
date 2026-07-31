@@ -1,4 +1,4 @@
-import { VocabularyRecord, ProgressRecord, PracticeMode } from '../types';
+import { VocabularyRecord, ProgressRecord, PracticeMode, AppLevel } from '../types';
 import { StorageService } from './storage';
 
 export class QueueService {
@@ -34,17 +34,39 @@ export class QueueService {
 
   public static getEligibleWords(
     mode: PracticeMode,
-    selectedSectors?: Set<string>
+    selectedSectors?: Set<string>,
+    level: AppLevel = 'lvl1'
   ): VocabularyRecord[] {
     const vocab = StorageService.getVocabulary();
-    const progressMap = new Map(StorageService.getProgress().map(p => [p.vocabularyId, p]));
+    const progressLvl1Map = new Map(StorageService.getProgress('lvl1').map(p => [p.vocabularyId, p]));
+    const progressLvl2Map = new Map(StorageService.getProgress('lvl2').map(p => [p.vocabularyId, p]));
 
     return vocab.filter(word => {
       if (selectedSectors && selectedSectors.size > 0 && !selectedSectors.has(word.sector)) {
         return false;
       }
 
-      const p = progressMap.get(word.id) || null;
+      if (level === 'lvl2') {
+        // Level 2 eligibility: MUST be Mastered in Level 1
+        const p1 = progressLvl1Map.get(word.id) || null;
+        const state1 = StorageService.getLearningState(p1);
+        if (state1 !== 'Mastered') {
+          return false;
+        }
+
+        const p2 = progressLvl2Map.get(word.id) || null;
+        const state2 = StorageService.getLearningState(p2);
+        if (mode === 'weak') {
+          return state2 === 'Needs Work' || (p2 !== null && p2.attempts > 0 && p2.accuracy < 0.5);
+        }
+        if (mode === 'less') {
+          return !p2 || p2.attempts <= 1;
+        }
+        return true;
+      }
+
+      // Level 1 logic
+      const p = progressLvl1Map.get(word.id) || null;
       const state = StorageService.getLearningState(p);
 
       if (mode === 'weak') {
@@ -60,9 +82,10 @@ export class QueueService {
 
   public static buildQueue(
     eligibleWords: VocabularyRecord[],
-    excludedWordId?: string
+    excludedWordId?: string,
+    level: AppLevel = 'lvl1'
   ): VocabularyRecord[] {
-    const progressMap = new Map(StorageService.getProgress().map(p => [p.vocabularyId, p]));
+    const progressMap = new Map(StorageService.getProgress(level).map(p => [p.vocabularyId, p]));
     const candidates = eligibleWords.filter(w => w.id !== excludedWordId);
 
     if (candidates.length === 0) return [];

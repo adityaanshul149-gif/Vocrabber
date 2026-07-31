@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { VocabularyService } from '../services/vocabulary';
-import { X, Upload, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { X, Upload, CheckCircle2, AlertTriangle, Target, Info } from 'lucide-react';
 import { PackInstructionModal } from './PackInstructionModal';
 
-interface ImportModalProps {
+interface Level2PackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: () => void;
+  onUpdateComplete: () => void;
 }
 
-export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImportComplete }) => {
+export const Level2PackModal: React.FC<Level2PackModalProps> = ({
+  isOpen,
+  onClose,
+  onUpdateComplete
+}) => {
   const [text, setText] = useState('');
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(
     null
@@ -20,29 +24,28 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
 
   const handleImport = () => {
     try {
-      const parsed = VocabularyService.parsePipeImport(text);
-      if (parsed.records.length === 0) {
+      const result = VocabularyService.parseAndMergeLevel2Pack(text);
+      if (result.updated === 0 && result.errors.length > 0) {
         setStatusMessage({
-          text: `Failed: ${parsed.errors.join(' ')}`,
+          text: `Failed: ${result.errors.join(' ')}`,
           isError: true
         });
         return;
       }
 
-      const result = VocabularyService.mergeImported(parsed.records);
-      const msg = `Processed: ${parsed.processed} | Added: ${result.added} | Updated: ${result.updated}${
-        parsed.errors.length > 0 ? ` | Errors: ${parsed.errors.length}` : ''
+      const msg = `Processed: ${result.processed} | Updated LVL II Words: ${result.updated}${
+        result.unknownIds.length > 0 ? ` | Unknown IDs: ${result.unknownIds.length}` : ''
       }`;
 
       setStatusMessage({
         text: msg,
-        isError: parsed.errors.length > 0
+        isError: result.errors.length > 0
       });
 
-      onImportComplete();
+      onUpdateComplete();
     } catch (e) {
       setStatusMessage({
-        text: `Error parsing data: ${(e as Error).message}`,
+        text: `Error updating Level 2 pack: ${(e as Error).message}`,
         isError: true
       });
     }
@@ -56,19 +59,22 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
-        <div className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#A855F7] space-y-4">
+        <div className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#FF2E93] space-y-4">
+          {/* Header */}
           <div className="flex items-center justify-between border-b-2.5 border-black dark:border-slate-800 pb-3">
             <div>
-              <span className="text-[10px] font-black uppercase text-purple-700 dark:text-purple-400 tracking-wider block">
-                Data Management
+              <span className="text-[10px] font-black uppercase text-[#FF2E93] tracking-wider flex items-center gap-1">
+                <Target className="w-3.5 h-3.5 text-[#FF2E93] stroke-[2.5]" /> Level II Configuration
               </span>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black font-display uppercase text-slate-900 dark:text-white">Paste Vocabulary Pack</h2>
+                <h2 className="text-xl font-black font-display uppercase text-slate-900 dark:text-white">
+                  Paste Level II Word Pack
+                </h2>
                 <button
                   type="button"
                   onClick={() => setShowInstructions(true)}
-                  title="How to generate copyable vocabulary pack with AI"
-                  className="p-1 rounded-lg bg-amber-300 border-2 border-black text-black hover:bg-amber-400 transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#000]"
+                  title="How to generate copyable Level II pack with AI"
+                  className="p-1 rounded-lg bg-[#FF2E93] border-2 border-black text-white hover:bg-[#E0267D] transition-all cursor-pointer shadow-[1.5px_1.5px_0px_0px_#000]"
                 >
                   <Info className="w-4 h-4 stroke-[2.5]" />
                 </button>
@@ -84,15 +90,15 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           </div>
 
           <p className="text-xs text-slate-800 dark:text-slate-200 font-bold">
-            Paste pipe-separated (<code>|</code>) VocCrab vocabulary data with 17 columns header:
+            Paste pipe-separated (<code>|</code>) or semicolon-separated (<code>;</code>) Level II word data containing ID, word, exact definition, and 4 close distractors:
           </p>
 
           <textarea
             spellCheck={false}
             value={text}
             onChange={e => setText(e.target.value)}
-            placeholder={`id|word|sector|definition|example_usage|s1|s1_true|s2|s2_true|s3|s3_true|s4|s4_true|s5|s5_true|s6|s6_true\nVOC000001|abate|Economics|To become less intense|Inflation began to abate.|Inflation began to abate after policy changes.|TRUE|Public anger abated after the inquiry.|TRUE|The abate professor delivered a lecture.|FALSE|Researchers abated the hypothesis.|FALSE|The reforms worsened inflation and thus abated prices.|FALSE|The crisis abated into greater intensity.|FALSE`}
-            className="w-full h-48 bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl p-3 font-mono text-xs text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-purple-600 resize-y"
+            placeholder={`id|word|definition|distractor1|distractor2|distractor3|distractor4\nVOC000001|abate|To become less intense or widespread|To intensify rapidly under external pressure|To completely eradicate or annihilate|To hesitate briefly before taking action|To duplicate precisely in structural form\nOR Semicolon format:\nVOC000001 | To become less intense ; To intensify rapidly ; To eradicate ; To hesitate ; To duplicate`}
+            className="w-full h-48 bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl p-3 font-mono text-xs text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:border-pink-500 resize-y"
           />
 
           {statusMessage && (
@@ -112,6 +118,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
             </div>
           )}
 
+          {/* Buttons */}
           <div className="flex justify-between items-center pt-3 border-t-2 border-black dark:border-slate-800">
             <button
               type="button"
@@ -133,10 +140,10 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
                 type="button"
                 disabled={!text.trim()}
                 onClick={handleImport}
-                className="px-5 py-2 bg-[#A855F7] hover:bg-[#9333EA] disabled:bg-slate-300 disabled:text-slate-500 text-white font-black font-display text-xs uppercase rounded-xl border-2.5 border-black flex items-center gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                className="px-5 py-2 bg-[#FF2E93] hover:bg-[#E0267D] disabled:bg-slate-300 disabled:text-slate-500 text-white font-black font-display text-xs uppercase rounded-xl border-2.5 border-black flex items-center gap-2 cursor-pointer shadow-[3px_3px_0px_0px_#00F0FF] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
               >
                 <Upload className="w-4 h-4 stroke-[2.5]" />
-                Import Pack
+                Update Level II Pack
               </button>
             </div>
           </div>
@@ -146,7 +153,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
       <PackInstructionModal
         isOpen={showInstructions}
         onClose={() => setShowInstructions(false)}
-        type="import_full"
+        type="lvl2_options"
       />
     </>
   );

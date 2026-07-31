@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PracticeMode, VocabularyRecord } from '../types';
+import { PracticeMode, VocabularyRecord, AppLevel } from '../types';
 import { QueueService } from '../services/queue';
 import { VALID_SECTORS } from '../data/defaultVocabulary';
 import { X, Play } from 'lucide-react';
@@ -7,6 +7,7 @@ import { X, Play } from 'lucide-react';
 interface PracticeConfigModalProps {
   isOpen: boolean;
   mode: PracticeMode;
+  appLevel?: AppLevel;
   onClose: () => void;
   onStart: (mode: PracticeMode, selectedSectors: Set<string>) => void;
 }
@@ -14,6 +15,7 @@ interface PracticeConfigModalProps {
 export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
   isOpen,
   mode,
+  appLevel = 'lvl1',
   onClose,
   onStart
 }) => {
@@ -22,12 +24,12 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const eligible = QueueService.getEligibleWords(mode);
+      const eligible = QueueService.getEligibleWords(mode, undefined, appLevel as AppLevel);
       const availableSectors = new Set(eligible.map(w => w.sector));
-      setSelectedSectors(availableSectors.size > 0 ? availableSectors : new Set(VALID_SECTORS));
+      setSelectedSectors(availableSectors.size > 0 ? availableSectors : new Set<string>(VALID_SECTORS));
       setEligibleList(eligible);
     }
-  }, [isOpen, mode]);
+  }, [isOpen, mode, appLevel]);
 
   if (!isOpen) return null;
 
@@ -45,6 +47,7 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
   };
 
   const activeCount = eligibleList.filter(w => selectedSectors.has(w.sector)).length;
+  const selectedAvailableCount = Array.from(selectedSectors).filter(s => eligibleList.some(w => w.sector === s)).length;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
@@ -67,7 +70,7 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
 
         <div>
           <span className="text-xs font-black text-slate-900 dark:text-slate-100 block mb-2 uppercase">
-            Select Active Sectors ({selectedSectors.size} Selected · {activeCount} Word{activeCount === 1 ? '' : 's'})
+            Select Active Sectors ({selectedAvailableCount} Selected · {activeCount} Word{activeCount === 1 ? '' : 's'})
           </span>
 
           {eligibleList.length === 0 ? (

@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   VocabularyRecord,
   ProgressRecord,
   SessionData,
   PracticeMode,
-  TabName
+  TabName,
+  AppLevel
 } from './types';
 import { StorageService } from './services/storage';
 import { QueueService } from './services/queue';
@@ -15,17 +16,28 @@ import { PracticeConfigModal } from './components/PracticeConfigModal';
 import { PracticeScreen } from './components/PracticeScreen';
 import { ImportModal } from './components/ImportModal';
 import { SentencePackModal } from './components/SentencePackModal';
+import { Level2PackModal } from './components/Level2PackModal';
 import { LibraryView } from './components/LibraryView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SectorAnalyticsView } from './components/SectorAnalyticsView';
 import { SettingsModal } from './components/SettingsModal';
-import { PlusCircle, FileText } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabName>('home');
   const [vocabulary, setVocabulary] = useState<VocabularyRecord[]>([]);
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [session, setSession] = useState<SessionData | null>(null);
+
+  // Active App Level ('lvl1' | 'lvl2')
+  const [appLevel, setAppLevel] = useState<AppLevel>(() => {
+    const saved = localStorage.getItem('voccrab_appLevel');
+    return saved === 'lvl2' ? 'lvl2' : 'lvl1';
+  });
+
+  const handleToggleLevel = (level: AppLevel) => {
+    setAppLevel(level);
+    localStorage.setItem('voccrab_appLevel', level);
+  };
 
   // Theme state ('light' | 'dark')
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -38,13 +50,13 @@ export default function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
+    if (theme === 'dark' || appLevel === 'lvl2') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
     localStorage.setItem('voccrab_theme', theme);
-  }, [theme]);
+  }, [theme, appLevel]);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
@@ -61,15 +73,16 @@ export default function App() {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSentenceModalOpen, setIsSentenceModalOpen] = useState(false);
+  const [isLevel2ModalOpen, setIsLevel2ModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Refresh local data state
   const reloadData = useCallback(() => {
     StorageService.initialize();
     setVocabulary(StorageService.getVocabulary());
-    setProgress(StorageService.getProgress());
+    setProgress(StorageService.getProgress(appLevel));
     setSession(StorageService.getSession());
-  }, []);
+  }, [appLevel]);
 
   useEffect(() => {
     reloadData();
@@ -113,7 +126,7 @@ export default function App() {
     if (targetWords.length === 0) return;
 
     setPracticeMode('random');
-    const queue = QueueService.buildQueue(targetWords);
+    const queue = QueueService.buildQueue(targetWords, undefined, appLevel);
 
     const newSessionData: SessionData = {
       sessionId: `SESSION-${Date.now()}`,
@@ -144,11 +157,11 @@ export default function App() {
     setSelectedPracticeSectors(sectors);
     setIsConfigModalOpen(false);
 
-    const eligible = QueueService.getEligibleWords(mode, sectors);
-    const queue = QueueService.buildQueue(eligible);
+    const eligible = QueueService.getEligibleWords(mode, sectors, appLevel);
+    const queue = QueueService.buildQueue(eligible, undefined, appLevel);
 
     if (queue.length === 0) {
-      alert('No eligible words found for the selected mode and sectors.');
+      alert(`No eligible words found for Level ${appLevel === 'lvl2' ? 'II' : 'I'} with selected filters.${appLevel === 'lvl2' ? ' (Note: Level II requires words to be Mastered in Level I or have Level II distractors).' : ''}`);
       return;
     }
 
@@ -178,7 +191,7 @@ export default function App() {
 
   // Record answer review
   const handleAnswerSubmit = (word: VocabularyRecord, isCorrect: boolean) => {
-    StorageService.recordReview(word.id, isCorrect, word.sector);
+    StorageService.recordReview(word.id, isCorrect, word.sector, appLevel);
 
     // Update active session stats
     const sess = StorageService.getSession() || {
@@ -215,7 +228,7 @@ export default function App() {
     StorageService.setSession(sess);
 
     // Update state
-    setProgress(StorageService.getProgress());
+    setProgress(StorageService.getProgress(appLevel));
     setSession(sess);
   };
 
@@ -224,8 +237,8 @@ export default function App() {
     let nextQueue = [...activeQueue];
     if (nextQueue.length === 0) {
       // Rebuild queue if empty
-      const eligible = QueueService.getEligibleWords(practiceMode, selectedPracticeSectors);
-      nextQueue = QueueService.buildQueue(eligible, currentWord?.id);
+      const eligible = QueueService.getEligibleWords(practiceMode, selectedPracticeSectors, appLevel);
+      nextQueue = QueueService.buildQueue(eligible, currentWord?.id, appLevel);
     }
 
     if (nextQueue.length === 0) {
@@ -245,26 +258,54 @@ export default function App() {
     setActiveTab('home');
   };
 
-  // Calculated summary statistics
-  const masteredCount = vocabulary.filter(
-    v => StorageService.getLearningState(progress.find(p => p.vocabularyId === v.id) || null) === 'Mastered'
+  // Active Vocabulary deck based on App Level
+  const activeLevelVocabulary = useMemo(() => {
+    if (appLevel === 'lvl2') {
+      const lvl1ProgressMap = new Map(StorageService.getProgress('lvl1').map(p => [p.vocabularyId, p]));
+      return vocabulary.filter(v => {
+        const p1 = lvl1ProgressMap.get(v.id) || null;
+        return StorageService.getLearningState(p1) === 'Mastered';
+      });
+    }
+    return vocabulary;
+  }, [vocabulary, progress, appLevel]);
+
+  const vocabularyCount = activeLevelVocabulary.length;
+
+  const progressMap = useMemo(() => new Map(progress.map(p => [p.vocabularyId, p])), [progress]);
+
+  const masteredCount = activeLevelVocabulary.filter(
+    v => StorageService.getLearningState(progressMap.get(v.id) || null) === 'Mastered'
   ).length;
 
-  const needsWorkCount = vocabulary.filter(
-    v => StorageService.getLearningState(progress.find(p => p.vocabularyId === v.id) || null) === 'Needs Work'
+  const needsWorkCount = activeLevelVocabulary.filter(
+    v => StorageService.getLearningState(progressMap.get(v.id) || null) === 'Needs Work'
   ).length;
 
   let totalAttempts = 0;
   let totalCorrect = 0;
-  progress.forEach(p => {
-    totalAttempts += p.attempts || 0;
-    totalCorrect += p.correct || 0;
+  activeLevelVocabulary.forEach(v => {
+    const p = progressMap.get(v.id);
+    if (p) {
+      totalAttempts += p.attempts || 0;
+      totalCorrect += p.correct || 0;
+    }
   });
   const accuracyPercent = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
 
+  const isLvl2 = appLevel === 'lvl2';
+
   return (
-    <div className="min-h-screen bg-[#F6F5FB] dark:bg-slate-950 text-[#1E1B2E] dark:text-slate-100 flex flex-col font-sans selection:bg-[#7C3AED] selection:text-white transition-colors">
-      {!isPracticeActive && <Header theme={theme} onToggleTheme={toggleTheme} />}
+    <div className={`min-h-screen flex flex-col font-sans selection:bg-[#7C3AED] selection:text-white transition-colors ${
+      isLvl2 ? 'bg-[#0B0F19] text-slate-100' : 'bg-[#F6F5FB] dark:bg-slate-950 text-[#1E1B2E] dark:text-slate-100'
+    }`}>
+      {!isPracticeActive && (
+        <Header
+          appLevel={appLevel}
+          onToggleLevel={handleToggleLevel}
+          theme={theme}
+        />
+      )}
 
       <main className={`flex-1 w-full mx-auto ${isPracticeActive ? 'p-0' : 'max-w-md px-4 py-5 pb-28'}`}>
         {isPracticeActive && currentWord ? (
@@ -277,6 +318,8 @@ export default function App() {
                 ? 'Less Attempted'
                 : 'Random Practice'
             }
+            appLevel={appLevel}
+            allVocabulary={vocabulary}
             onAnswerSubmit={handleAnswerSubmit}
             onNextWord={handleNextWord}
             onEndPractice={handleEndPractice}
@@ -286,10 +329,11 @@ export default function App() {
             {/* Active Tab View */}
             {activeTab === 'home' && (
               <HomeView
-                vocabularyCount={vocabulary.length}
+                vocabularyCount={vocabularyCount}
                 masteredCount={masteredCount}
                 needsWorkCount={needsWorkCount}
                 accuracyPercent={accuracyPercent}
+                appLevel={appLevel}
                 onOpenPracticeConfig={handleOpenPracticeConfig}
               />
             )}
@@ -298,6 +342,7 @@ export default function App() {
               <LibraryView
                 vocabulary={vocabulary}
                 progress={progress}
+                appLevel={appLevel}
                 onDataChanged={reloadData}
                 onPracticeSelectedWords={handleStartCustomPractice}
               />
@@ -308,6 +353,7 @@ export default function App() {
                 vocabulary={vocabulary}
                 progress={progress}
                 session={session}
+                appLevel={appLevel}
               />
             )}
 
@@ -315,6 +361,7 @@ export default function App() {
               <SectorAnalyticsView
                 vocabulary={vocabulary}
                 progress={progress}
+                appLevel={appLevel}
                 onDataChanged={reloadData}
               />
             )}
@@ -329,6 +376,7 @@ export default function App() {
       <PracticeConfigModal
         isOpen={isConfigModalOpen}
         mode={practiceMode}
+        appLevel={appLevel}
         onClose={() => setIsConfigModalOpen(false)}
         onStart={handleStartPracticeSession}
       />
@@ -345,12 +393,19 @@ export default function App() {
         onUpdateComplete={reloadData}
       />
 
+      <Level2PackModal
+        isOpen={isLevel2ModalOpen}
+        onClose={() => setIsLevel2ModalOpen(false)}
+        onUpdateComplete={reloadData}
+      />
+
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         onRestoreComplete={reloadData}
         onOpenImportModal={() => setIsImportModalOpen(true)}
         onOpenSentenceModal={() => setIsSentenceModalOpen(true)}
+        onOpenLevel2Modal={() => setIsLevel2ModalOpen(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
       />

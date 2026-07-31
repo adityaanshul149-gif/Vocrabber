@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { VocabularyRecord, ProgressRecord } from '../types';
+import { VocabularyRecord, ProgressRecord, AppLevel } from '../types';
 import { StorageService } from '../services/storage';
 import { VocabularyService } from '../services/vocabulary';
-import { VALID_SECTORS } from '../data/defaultVocabulary';
 import { WordDetailModal } from './WordDetailModal';
+import { ExportModal } from './ExportModal';
 import {
   Search,
   Download,
@@ -17,7 +17,9 @@ import {
   Eye,
   Filter,
   Check,
-  X
+  X,
+  Target,
+  Sparkles
 } from 'lucide-react';
 
 interface LibraryViewProps {
@@ -25,18 +27,21 @@ interface LibraryViewProps {
   progress: ProgressRecord[];
   onDataChanged: () => void;
   onPracticeSelectedWords?: (wordIds: string[]) => void;
+  appLevel?: AppLevel;
 }
 
 export const LibraryView: React.FC<LibraryViewProps> = ({
   vocabulary,
   progress,
   onDataChanged,
-  onPracticeSelectedWords
+  onPracticeSelectedWords,
+  appLevel = 'lvl1'
 }) => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter state
+  const [levelFilter, setLevelFilter] = useState<'all' | 'lvl1' | 'lvl2'>('all');
   const [sectorFilter, setSectorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [encounteredFilter, setEncounteredFilter] = useState('all');
@@ -59,21 +64,39 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     | 'random'
   >('word-asc');
 
-  // Selection & Copy Notice state
+  // Selection & Modal states
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [activeDetailWord, setActiveDetailWord] = useState<VocabularyRecord | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState(false);
 
-  // Dynamically extract unique existing sectors from loaded vocabulary
+  // Quick lookup map for Level 1 progress
+  const progressLvl1Map = useMemo(
+    () => new Map<string, ProgressRecord>(StorageService.getProgress('lvl1').map(p => [p.vocabularyId, p])),
+    [progress, vocabulary]
+  );
+
+  // Active vocabulary deck for the current appLevel
+  const activeDeck = useMemo(() => {
+    if (appLevel === 'lvl2') {
+      return vocabulary.filter(item => {
+        const p1 = progressLvl1Map.get(item.id) || null;
+        return StorageService.getLearningState(p1) === 'Mastered';
+      });
+    }
+    return vocabulary;
+  }, [vocabulary, appLevel, progressLvl1Map]);
+
+  // Dynamically extract unique existing sectors from loaded active deck
   const availableSectors = useMemo(() => {
     const sectorsSet = new Set<string>();
-    vocabulary.forEach(item => {
+    activeDeck.forEach(item => {
       if (item.sector) sectorsSet.add(item.sector);
     });
     return Array.from(sectorsSet).sort();
-  }, [vocabulary]);
+  }, [activeDeck]);
 
-  // Quick lookup map for progress
+  // Quick lookup map for active level progress
   const progressMap = useMemo(
     () => new Map<string, ProgressRecord>(progress.map(p => [p.vocabularyId, p])),
     [progress]
@@ -81,11 +104,20 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   // Filter logic
   const filteredVocabulary = useMemo(() => {
-    return vocabulary.filter(item => {
+    return activeDeck.filter(item => {
       const p = progressMap.get(item.id) || null;
       const state = StorageService.getLearningState(p);
       const attempts = p ? p.attempts : 0;
       const accuracy = p ? p.accuracy : 0;
+
+      // Level Filter
+      if (levelFilter === 'lvl2') {
+        const p1 = progressLvl1Map.get(item.id) || null;
+        const isMasteredInLvl1 = StorageService.getLearningState(p1) === 'Mastered';
+        if (!isMasteredInLvl1) return false;
+      } else if (levelFilter === 'lvl1') {
+        // level 1 explicit filter
+      }
 
       // Sector Filter
       if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false;
@@ -135,6 +167,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   }, [
     vocabulary,
     progressMap,
+    levelFilter,
     searchQuery,
     sectorFilter,
     statusFilter,
@@ -303,14 +336,56 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="space-y-4 font-sans max-w-md mx-auto">
-      {/* Search Bar & Sector Filter Card */}
+      {/* Search Bar & Level/Sector Filter Card */}
       <div className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all">
-        <div className="flex items-center justify-between">
+        {/* Header & Level Filter Tabs */}
+        <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-black text-black dark:text-white uppercase tracking-wider flex items-center gap-1.5">
             <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400 stroke-[2.5]" />
-            Library Filters
+            Deck Filters
           </span>
-          <span className="text-xs text-black dark:text-slate-300 font-bold">
+
+          {/* Level Filter Pill */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border-2 border-black dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setLevelFilter('all')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase cursor-pointer transition-all ${
+                levelFilter === 'all'
+                  ? 'bg-black text-white dark:bg-white dark:text-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              ALL
+            </button>
+            <button
+              type="button"
+              onClick={() => setLevelFilter('lvl1')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase cursor-pointer transition-all ${
+                levelFilter === 'lvl1'
+                  ? 'bg-[#FFE600] text-black border border-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              LVL I
+            </button>
+            <button
+              type="button"
+              onClick={() => setLevelFilter('lvl2')}
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase cursor-pointer transition-all ${
+                levelFilter === 'lvl2'
+                  ? 'bg-[#FF2E93] text-white border border-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white'
+              }`}
+            >
+              LVL II
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-black dark:text-slate-300 font-bold">
+          <span>Total Matches:</span>
+          <span className="text-xs">
             <strong className="text-purple-700 dark:text-purple-300 font-black">{sortedVocabulary.length}</strong> / {vocabulary.length} Words
           </span>
         </div>
@@ -338,7 +413,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Sector Filter Dropdown (Shows ONLY Existing Sectors) */}
+            {/* Sector Filter Dropdown */}
             <select
               value={sectorFilter}
               onChange={e => setSectorFilter(e.target.value)}
@@ -367,7 +442,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         </div>
 
-        {/* Sorting Row & Selection Controls */}
+        {/* Sorting Row & Selection / Export Controls */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t-2 border-black dark:border-slate-800">
           <div className="flex items-center gap-1.5 text-xs">
             <span className="text-[10px] font-black text-black dark:text-slate-400 uppercase">Sort:</span>
@@ -385,8 +460,17 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             </select>
           </div>
 
-          {/* Selection Tool Buttons */}
+          {/* Selection & Export Tool Buttons */}
           <div className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setIsExportModalOpen(true)}
+              className="px-2.5 py-1 bg-[#4ADE80] text-black border-2 border-black rounded-xl text-[11px] font-black flex items-center gap-1 cursor-pointer shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+            >
+              <Download className="w-3.5 h-3.5 stroke-[2.5]" />
+              Export
+            </button>
+
             <button
               type="button"
               onClick={handleToggleSelectAll}
@@ -523,6 +607,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           }
         }}
         onDataChanged={onDataChanged}
+      />
+
+      {/* Custom Column Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        records={selectedIds.size > 0 ? vocabulary.filter(v => selectedIds.has(v.id)) : sortedVocabulary}
       />
     </div>
   );

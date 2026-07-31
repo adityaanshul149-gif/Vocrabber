@@ -1,5 +1,5 @@
 import React from 'react';
-import { PracticeMode } from '../types';
+import { PracticeMode, AppLevel } from '../types';
 import { Play, Sparkles, Target, Zap, BookOpen, CheckCircle2, AlertCircle, Award } from 'lucide-react';
 
 interface HomeViewProps {
@@ -7,6 +7,7 @@ interface HomeViewProps {
   masteredCount: number;
   needsWorkCount: number;
   accuracyPercent: number;
+  appLevel?: AppLevel;
   onOpenPracticeConfig: (mode: PracticeMode) => void;
 }
 
@@ -15,29 +16,37 @@ export const HomeView: React.FC<HomeViewProps> = ({
   masteredCount,
   needsWorkCount,
   accuracyPercent,
+  appLevel = 'lvl1',
   onOpenPracticeConfig
 }) => {
+  const isLvl2 = appLevel === 'lvl2';
   const masteringProgress = vocabularyCount > 0 ? (masteredCount / vocabularyCount) * 100 : 0;
 
   return (
     <div className="space-y-6 font-sans max-w-md mx-auto">
       {/* Welcoming Banner Card - Neobrutalism Banner */}
-      <section className="bg-[#FFE600] dark:bg-purple-900 border-3 border-black dark:border-white rounded-3xl p-6 shadow-[5px_5px_0px_0px_#000] dark:shadow-[5px_5px_0px_0px_#A855F7] space-y-4 text-black dark:text-white transition-all">
+      <section className={`border-3 border-black dark:border-white rounded-3xl p-6 shadow-[5px_5px_0px_0px_#000] dark:shadow-[5px_5px_0px_0px_#FF2E93] space-y-4 transition-all ${
+        isLvl2 ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 text-white' : 'bg-[#FFE600] dark:bg-purple-900 text-black dark:text-white'
+      }`}>
         <div className="flex items-center justify-between">
-          <span className="px-3 py-1 rounded-xl bg-black text-amber-300 dark:bg-white dark:text-black text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border border-black">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 dark:text-purple-600 fill-amber-300" /> DAILY CAT GOAL
+          <span className={`px-3 py-1 rounded-xl text-xs font-black tracking-wider uppercase flex items-center gap-1.5 border border-black ${
+            isLvl2 ? 'bg-[#FF2E93] text-white' : 'bg-black text-amber-300 dark:bg-white dark:text-black'
+          }`}>
+            <Sparkles className="w-3.5 h-3.5 fill-current" /> {isLvl2 ? 'LEVEL II INTENSE' : 'DAILY CAT GOAL'}
           </span>
           <span className="text-xs font-black px-2.5 py-1 bg-white text-black border-2 border-black rounded-lg uppercase">
-            CAT VARC
+            {isLvl2 ? 'WORD & MEANING' : 'CAT VARC'}
           </span>
         </div>
 
         <div>
           <h2 className="text-2xl sm:text-3xl font-black font-display leading-tight uppercase tracking-tight">
-            Level Up Your VARC Vocab!
+            {isLvl2 ? 'Master Word Meanings!' : 'Level Up Your VARC Vocab!'}
           </h2>
-          <p className="text-black/90 dark:text-purple-200 text-xs mt-1.5 font-bold leading-relaxed">
-            Master high-frequency CAT words with real 6-sentence usage tests.
+          <p className={`text-xs mt-1.5 font-bold leading-relaxed ${isLvl2 ? 'text-slate-300' : 'text-black/90 dark:text-purple-200'}`}>
+            {isLvl2
+              ? 'Distractor-heavy 5-option quizzes on your Level I Mastered words.'
+              : 'Master high-frequency CAT words with real 6-sentence usage tests.'}
           </p>
         </div>
 
@@ -45,17 +54,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <button
           type="button"
           onClick={() => onOpenPracticeConfig('random')}
-          className="w-full py-4 px-6 bg-[#A855F7] hover:bg-[#9333EA] text-white font-black font-display text-base tracking-wider uppercase rounded-2xl border-3 border-black shadow-[4px_4px_0px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className={`w-full py-4 px-6 text-white font-black font-display text-base tracking-wider uppercase rounded-2xl border-3 border-black shadow-[4px_4px_0px_0px_#000] active:translate-x-1 active:translate-y-1 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            isLvl2 ? 'bg-[#FF2E93] hover:bg-[#E0267F]' : 'bg-[#A855F7] hover:bg-[#9333EA]'
+          }`}
         >
           <Play className="w-5 h-5 fill-white stroke-[2.5]" />
-          START STUDY SESSION
+          START {isLvl2 ? 'LEVEL II' : 'STUDY'} SESSION
         </button>
       </section>
 
       {/* Quick Mode Chips */}
       <section className="space-y-2.5">
         <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest px-1">
-          ⚡ Quick Study Modes
+          ⚡ Quick Study Modes ({isLvl2 ? 'Level II' : 'Level I'})
         </span>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -91,7 +102,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* Vocabulary Metrics Cards Grid */}
       <section className="space-y-2.5">
         <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest px-1">
-          📊 Study Statistics
+          📊 Study Statistics ({isLvl2 ? 'Level II' : 'Level I'})
         </span>
 
         <div className="grid grid-cols-2 gap-3">
@@ -152,12 +163,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
       {/* Mastery Progress Bar Card */}
       <section className="bg-white dark:bg-slate-900 rounded-2xl p-4 border-2.5 border-black dark:border-white shadow-[3.5px_3.5px_0px_0px_#000] dark:shadow-[3.5px_3.5px_0px_0px_#A855F7] space-y-2">
         <div className="flex items-center justify-between text-xs font-black uppercase">
-          <span className="text-slate-900 dark:text-white">Overall Deck Mastery</span>
+          <span className="text-slate-900 dark:text-white">Level {isLvl2 ? 'II' : 'I'} Mastery</span>
           <span className="text-purple-600 dark:text-purple-400 font-extrabold">{Math.round(masteringProgress)}%</span>
         </div>
         <div className="h-4 w-full bg-slate-200 dark:bg-slate-800 border-2 border-black dark:border-white rounded-xl overflow-hidden p-0.5">
           <div
-            className="h-full bg-[#A855F7] rounded-lg transition-all duration-500 border border-black"
+            className={`h-full rounded-lg transition-all duration-500 border border-black ${isLvl2 ? 'bg-[#FF2E93]' : 'bg-[#A855F7]'}`}
             style={{ width: `${Math.min(100, masteringProgress)}%` }}
           />
         </div>

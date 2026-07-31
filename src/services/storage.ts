@@ -5,7 +5,8 @@ import {
   SettingsData,
   FullBackup,
   IntegrityReport,
-  LearningState
+  LearningState,
+  AppLevel
 } from '../types';
 import { DEFAULT_VOCABULARY, VALID_SECTORS } from '../data/defaultVocabulary';
 
@@ -14,6 +15,7 @@ const KEYS = {
   application: 'voccrab.applicationVersion',
   vocabulary: 'voccrab.vocabulary',
   progress: 'voccrab.progress',
+  progressLvl2: 'voccrab.progress_lvl2',
   session: 'voccrab.session',
   settings: 'voccrab.settings',
   lastBackup: 'voccrab.lastBackup'
@@ -67,6 +69,9 @@ export class StorageService {
     if (!localStorage.getItem(KEYS.progress)) {
       this.write(KEYS.progress, []);
     }
+    if (!localStorage.getItem(KEYS.progressLvl2)) {
+      this.write(KEYS.progressLvl2, []);
+    }
     if (!localStorage.getItem(KEYS.settings)) {
       this.write(KEYS.settings, DEFAULT_SETTINGS);
     }
@@ -89,13 +94,15 @@ export class StorageService {
     return this.write(KEYS.vocabulary, records);
   }
 
-  public static getProgress(): ProgressRecord[] {
-    const data = this.read<ProgressRecord[]>(KEYS.progress);
+  public static getProgress(level: AppLevel = 'lvl1'): ProgressRecord[] {
+    const key = level === 'lvl2' ? KEYS.progressLvl2 : KEYS.progress;
+    const data = this.read<ProgressRecord[]>(key);
     return Array.isArray(data) ? data : [];
   }
 
-  public static setProgress(records: ProgressRecord[]): boolean {
-    return this.write(KEYS.progress, records);
+  public static setProgress(records: ProgressRecord[], level: AppLevel = 'lvl1'): boolean {
+    const key = level === 'lvl2' ? KEYS.progressLvl2 : KEYS.progress;
+    return this.write(key, records);
   }
 
   public static getSession(): SessionData | null {
@@ -153,8 +160,8 @@ export class StorageService {
     return 'Learning';
   }
 
-  public static recordReview(vocabularyId: string, wasCorrect: boolean, sector: string): ProgressRecord {
-    const progressList = this.getProgress();
+  public static recordReview(vocabularyId: string, wasCorrect: boolean, sector: string, level: AppLevel = 'lvl1'): ProgressRecord {
+    const progressList = this.getProgress(level);
     const map = new Map(progressList.map(p => [p.vocabularyId, p]));
     const record = map.get(vocabularyId) || this.createProgressRecord(vocabularyId);
 
@@ -174,7 +181,7 @@ export class StorageService {
       {
         reviewedAt: now,
         wasCorrect,
-        practiceMode: 'adaptive-practice',
+        practiceMode: `adaptive-practice-${level}`,
         sessionId: this.getSession()?.sessionId || 'session'
       }
     ];
@@ -189,7 +196,7 @@ export class StorageService {
     record.updatedAt = now;
 
     map.set(vocabularyId, record);
-    this.setProgress(Array.from(map.values()));
+    this.setProgress(Array.from(map.values()), level);
     return record;
   }
 

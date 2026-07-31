@@ -1,3 +1,5 @@
+export type AppLevel = 'lvl1' | 'lvl2';
+
 export interface Sentence {
   text: string;
   correct: boolean;
@@ -28,6 +30,7 @@ export interface VocabularyRecord {
   definition: string;
   exampleUsage: string;
   sentences: Sentence[];
+  level2Distractors?: string[];
   createdAt: string;
   updatedAt: string;
   status: 'active' | 'archived';

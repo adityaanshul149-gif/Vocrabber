@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { VocabularyRecord, ProgressRecord } from '../types';
+import { VocabularyRecord, ProgressRecord, AppLevel } from '../types';
 import { StorageService } from '../services/storage';
 import { VocabularyService } from '../services/vocabulary';
 import { Copy, Download, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
@@ -8,12 +8,14 @@ interface SectorAnalyticsViewProps {
   vocabulary: VocabularyRecord[];
   progress: ProgressRecord[];
   onDataChanged: () => void;
+  appLevel?: AppLevel;
 }
 
 export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
   vocabulary,
   progress,
-  onDataChanged
+  onDataChanged,
+  appLevel = 'lvl1'
 }) => {
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('alphabetical');
@@ -22,6 +24,11 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const progressMap = new Map<string, ProgressRecord>(progress.map(p => [p.vocabularyId, p]));
+  const progressLvl1Map = new Map<string, ProgressRecord>(StorageService.getProgress('lvl1').map(p => [p.vocabularyId, p]));
+
+  const activeVocab = appLevel === 'lvl2'
+    ? vocabulary.filter(v => StorageService.getLearningState(progressLvl1Map.get(v.id) || null) === 'Mastered')
+    : vocabulary;
 
   // Group words by sector
   const sectorGroups = new Map<
@@ -29,7 +36,7 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
     { name: string; words: { word: VocabularyRecord; progress: ProgressRecord | null }[] }
   >();
 
-  vocabulary.forEach(word => {
+  activeVocab.forEach(word => {
     if (!sectorGroups.has(word.sector)) {
       sectorGroups.set(word.sector, { name: word.sector, words: [] });
     }
@@ -186,17 +193,23 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
             const isExpanded = expandedSector === stats.name;
             const sectorWordsList = stats.words.map(w => w.word);
 
-            return (
-              <div
-                key={stats.name}
-                className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="font-black font-display text-slate-900 dark:text-white text-base uppercase">{stats.name}</h3>
-                  <span className="text-xs font-black px-2.5 py-1 bg-[#A855F7] text-white border-2 border-black rounded-lg">
-                    {Math.round(stats.accuracy)}% ACC
-                  </span>
-                </div>
+              const getAccuracyColorBg = (acc: number) => {
+                if (acc >= 90) return 'bg-[#4ADE80] text-black';
+                if (acc >= 70) return 'bg-[#FFE600] text-black';
+                return 'bg-[#FF6B6B] text-black';
+              };
+
+              return (
+                <div
+                  key={stats.name}
+                  className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black font-display text-slate-900 dark:text-white text-base uppercase">{stats.name}</h3>
+                    <span className={`text-xs font-black px-2.5 py-1 border-2 border-black rounded-lg ${getAccuracyColorBg(stats.accuracy)}`}>
+                      {Math.round(stats.accuracy)}% ACC
+                    </span>
+                  </div>
 
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-bold truncate">
                   {sectorWordsList.slice(0, 3).map(w => w.word).join(' · ') || 'No words'}

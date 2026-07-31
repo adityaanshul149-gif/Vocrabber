@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { StorageService } from '../services/storage';
 import { FullBackup, IntegrityReport } from '../types';
-import { X, Download, Upload, ShieldCheck, Database, PlusCircle, FileText, Sparkles, Sun, Moon } from 'lucide-react';
+import { X, Download, Upload, ShieldCheck, Database, PlusCircle, FileText, Sparkles, Sun, Moon, Target } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -9,6 +9,7 @@ interface SettingsModalProps {
   onRestoreComplete: () => void;
   onOpenImportModal?: () => void;
   onOpenSentenceModal?: () => void;
+  onOpenLevel2Modal?: () => void;
   theme?: 'light' | 'dark';
   onToggleTheme?: () => void;
 }
@@ -19,6 +20,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onRestoreComplete,
   onOpenImportModal,
   onOpenSentenceModal,
+  onOpenLevel2Modal,
   theme = 'light',
   onToggleTheme
 }) => {
@@ -198,9 +200,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               type="button"
               onClick={() => {
                 onClose();
+                if (onOpenLevel2Modal) onOpenLevel2Modal();
+              }}
+              className="py-2.5 px-3.5 rounded-xl bg-[#FF2E93] hover:bg-[#E0267D] text-white font-black text-xs uppercase border-2 border-black flex items-center justify-center gap-2 cursor-pointer shadow-[2px_2px_0px_0px_#00F0FF] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+            >
+              <Target className="w-4 h-4 stroke-[2.5]" />
+              Paste Level 2 Pack
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
                 if (onOpenSentenceModal) onOpenSentenceModal();
               }}
-              className="py-2.5 px-3.5 rounded-xl bg-white text-slate-900 font-black text-xs uppercase border-2 border-black flex items-center justify-center gap-2 cursor-pointer shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              className="py-2.5 px-3.5 sm:col-span-2 rounded-xl bg-white text-slate-900 font-black text-xs uppercase border-2 border-black flex items-center justify-center gap-2 cursor-pointer shadow-[2px_2px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
             >
               <FileText className="w-4 h-4 text-purple-600 stroke-[2.5]" />
               Update Sentences

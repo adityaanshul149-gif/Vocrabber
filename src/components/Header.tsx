@@ -1,52 +1,68 @@
 import React from 'react';
-import { Sparkles, Sun, Moon } from 'lucide-react';
+import { AppLevel } from '../types';
+import { Sparkles, Target } from 'lucide-react';
 
 interface HeaderProps {
+  appLevel: AppLevel;
+  onToggleLevel: (level: AppLevel) => void;
   theme?: 'light' | 'dark';
-  onToggleTheme?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ theme = 'light', onToggleTheme }) => {
+export const Header: React.FC<HeaderProps> = ({ appLevel, onToggleLevel }) => {
+  const isLvl2 = appLevel === 'lvl2';
+
   return (
-    <header className="bg-[#FFE600] dark:bg-purple-950 border-b-3 border-black dark:border-white sticky top-0 z-40 transition-colors shadow-[0px_4px_0px_0px_#000] dark:shadow-[0px_4px_0px_0px_#A855F7]">
-      <div className="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-purple-600 text-white border-2 border-black dark:border-white shadow-[2.5px_2.5px_0px_0px_#000] dark:shadow-[2.5px_2.5px_0px_0px_#FFF] flex items-center justify-center text-xl font-black">
+    <header className={`sticky top-0 z-40 transition-colors border-b-3 border-black shadow-[0px_4px_0px_0px_#000] ${
+      isLvl2
+        ? 'bg-[#0B0F19] text-white border-pink-500 shadow-[0px_4px_0px_0px_#FF2E93]'
+        : 'bg-[#FFE600] dark:bg-purple-950 text-black dark:text-white dark:shadow-[0px_4px_0px_0px_#A855F7]'
+    }`}>
+      <div className="max-w-md mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
+        {/* VocCrab Logo Branding */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-black border-2 border-black transition-all ${
+            isLvl2 ? 'bg-[#FF2E93] text-white shadow-[2.5px_2.5px_0px_0px_#00F0FF]' : 'bg-purple-600 text-white shadow-[2.5px_2.5px_0px_0px_#000]'
+          }`}>
             🦀
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-xl font-black font-display tracking-tight text-black dark:text-white uppercase">
-                VocCrab
-              </h1>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-black text-amber-300 border border-black dark:bg-white dark:text-black">
-                PRO
-              </span>
-            </div>
-            <p className="text-[11px] text-black/80 dark:text-purple-200 font-extrabold uppercase tracking-wide">CAT VARC Vocabulary</p>
+            <h1 className="text-xl font-black font-display tracking-tight uppercase leading-none">
+              VocCrab
+            </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {onToggleTheme && (
-            <button
-              type="button"
-              onClick={onToggleTheme}
-              aria-label="Toggle dark mode"
-              className="p-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-black dark:border-white shadow-[2.5px_2.5px_0px_0px_#000] dark:shadow-[2.5px_2.5px_0px_0px_#A855F7] text-black dark:text-white active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all cursor-pointer font-bold"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-400 stroke-[2.5]" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-900 stroke-[2.5]" />
-              )}
-            </button>
-          )}
+        {/* Animated Horizontal Level Switcher */}
+        <div className={`relative p-1 rounded-2xl border-2.5 border-black flex items-center gap-1 shadow-[3px_3px_0px_0px_#000] cursor-pointer transition-all ${
+          isLvl2 ? 'bg-[#121827] border-pink-500' : 'bg-white dark:bg-slate-900'
+        }`}>
+          {/* Level 1 Button */}
+          <button
+            type="button"
+            onClick={() => onToggleLevel('lvl1')}
+            className={`relative z-10 px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
+              !isLvl2
+                ? 'bg-[#FFE600] text-black border-2 border-black shadow-[2px_2px_0px_0px_#000]'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 stroke-[2.5] ${!isLvl2 ? 'text-purple-700' : 'text-slate-500'}`} />
+            LVL I
+          </button>
 
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-400 dark:bg-emerald-500 text-black border-2 border-black shadow-[2.5px_2.5px_0px_0px_#000] text-xs font-black">
-            <Sparkles className="w-3.5 h-3.5 text-black stroke-[3] animate-pulse" />
-            <span className="uppercase tracking-wide">CAT Mode</span>
-          </div>
+          {/* Level 2 Button */}
+          <button
+            type="button"
+            onClick={() => onToggleLevel('lvl2')}
+            className={`relative z-10 px-3 py-1.5 rounded-xl font-black text-xs uppercase tracking-wide transition-all flex items-center gap-1 cursor-pointer ${
+              isLvl2
+                ? 'bg-[#FF2E93] text-white border-2 border-black shadow-[2px_2px_0px_0px_#00F0FF] animate-pulse'
+                : 'text-slate-600 dark:text-slate-400 hover:text-black dark:hover:text-white'
+            }`}
+          >
+            <Target className={`w-3.5 h-3.5 stroke-[2.5] ${isLvl2 ? 'text-[#00F0FF]' : 'text-slate-500'}`} />
+            LVL II
+          </button>
         </div>
       </div>
     </header>
