@@ -20,14 +20,20 @@ export const WordDetailModal: React.FC<WordDetailModalProps> = ({
 }) => {
   if (!word) return null;
 
-  const state = StorageService.getLearningState(progress);
+  const p1 = StorageService.getProgress('lvl1').find(p => p.vocabularyId === word.id) || null;
+  const p2 = StorageService.getProgress('lvl2').find(p => p.vocabularyId === word.id) || null;
+
+  const state1 = StorageService.getLearningState(p1);
+  const state2 = StorageService.getLearningState(p2);
+  const isQualifiedL2 = state1 === 'Mastered';
 
   const handleClearWordProgress = () => {
     if (!window.confirm(`Reset practice history and progress for "${word.word}"?`)) return;
 
-    const allProgress = StorageService.getProgress();
-    const updated = allProgress.filter(p => p.vocabularyId !== word.id);
-    StorageService.setProgress(updated);
+    const allP1 = StorageService.getProgress('lvl1').filter(p => p.vocabularyId !== word.id);
+    const allP2 = StorageService.getProgress('lvl2').filter(p => p.vocabularyId !== word.id);
+    StorageService.setProgress(allP1, 'lvl1');
+    StorageService.setProgress(allP2, 'lvl2');
     if (onDataChanged) onDataChanged();
   };
 
@@ -66,35 +72,72 @@ export const WordDetailModal: React.FC<WordDetailModalProps> = ({
         </div>
 
         {/* Metrics Row */}
-        <div className="grid grid-cols-3 gap-2 bg-[#FFE600]/20 dark:bg-slate-800/80 p-3 rounded-xl border-2 border-black dark:border-slate-700 text-center text-xs">
-          <div>
-            <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">Status</span>
-            <span
-              className={`font-black block text-xs uppercase mt-0.5 ${
-                state === 'Mastered'
-                  ? 'text-emerald-700 dark:text-emerald-400'
-                  : state === 'Needs Work'
-                  ? 'text-rose-700 dark:text-rose-400'
-                  : state === 'Learning'
-                  ? 'text-purple-700 dark:text-purple-300'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
-            >
-              {state}
-            </span>
+        <div className="space-y-2">
+          {/* Level I Row */}
+          <div className="grid grid-cols-3 gap-2 bg-[#FFE600]/20 dark:bg-slate-800/80 p-3 rounded-xl border-2 border-black dark:border-slate-700 text-center text-xs">
+            <div>
+              <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">Level I Status</span>
+              <span
+                className={`font-black block text-xs uppercase mt-0.5 ${
+                  state1 === 'Mastered'
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : state1 === 'Needs Work'
+                    ? 'text-rose-700 dark:text-rose-400'
+                    : state1 === 'Learning'
+                    ? 'text-purple-700 dark:text-purple-300'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                {state1} I
+              </span>
+            </div>
+            <div>
+              <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">L1 Accuracy</span>
+              <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
+                {p1 ? Math.round(p1.accuracy * 100) : 0}%
+              </span>
+            </div>
+            <div>
+              <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">L1 Tries</span>
+              <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
+                {p1?.attempts || 0}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">Accuracy</span>
-            <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
-              {progress ? Math.round(progress.accuracy * 100) : 0}%
-            </span>
-          </div>
-          <div>
-            <span className="text-black dark:text-slate-400 block text-[10px] font-black uppercase">Attempts</span>
-            <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
-              {progress?.attempts || 0}
-            </span>
-          </div>
+
+          {/* Level II Row if qualified */}
+          {isQualifiedL2 && (
+            <div className="grid grid-cols-3 gap-2 bg-pink-500/10 dark:bg-pink-950/40 p-3 rounded-xl border-2 border-pink-500 text-center text-xs">
+              <div>
+                <span className="text-pink-700 dark:text-pink-300 block text-[10px] font-black uppercase">Level II Status</span>
+                <span
+                  className={`font-black block text-xs uppercase mt-0.5 ${
+                    state2 === 'Mastered'
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : state2 === 'Needs Work'
+                      ? 'text-rose-700 dark:text-rose-400'
+                      : state2 === 'Learning'
+                      ? 'text-purple-700 dark:text-purple-300'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  {state2} II
+                </span>
+              </div>
+              <div>
+                <span className="text-pink-700 dark:text-pink-300 block text-[10px] font-black uppercase">L2 Accuracy</span>
+                <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
+                  {p2 ? Math.round(p2.accuracy * 100) : 0}%
+                </span>
+              </div>
+              <div>
+                <span className="text-pink-700 dark:text-pink-300 block text-[10px] font-black uppercase">L2 Tries</span>
+                <span className="font-black text-slate-900 dark:text-slate-100 block text-xs mt-0.5">
+                  {p2?.attempts || 0}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Definition & Usage */}

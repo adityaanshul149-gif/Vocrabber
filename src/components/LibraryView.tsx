@@ -76,16 +76,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     [progress, vocabulary]
   );
 
-  // Active vocabulary deck for the current appLevel
+  // Quick lookup map for Level 2 progress
+  const progressLvl2Map = useMemo(
+    () => new Map<string, ProgressRecord>(StorageService.getProgress('lvl2').map(p => [p.vocabularyId, p])),
+    [progress, vocabulary]
+  );
+
+  // Active vocabulary deck for the current appLevel or levelFilter
   const activeDeck = useMemo(() => {
-    if (appLevel === 'lvl2') {
+    if (levelFilter === 'lvl2' || (levelFilter === 'all' && appLevel === 'lvl2')) {
       return vocabulary.filter(item => {
         const p1 = progressLvl1Map.get(item.id) || null;
         return StorageService.getLearningState(p1) === 'Mastered';
       });
     }
     return vocabulary;
-  }, [vocabulary, appLevel, progressLvl1Map]);
+  }, [vocabulary, appLevel, levelFilter, progressLvl1Map]);
 
   // Dynamically extract unique existing sectors from loaded active deck
   const availableSectors = useMemo(() => {
@@ -105,18 +111,26 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   // Filter logic
   const filteredVocabulary = useMemo(() => {
     return activeDeck.filter(item => {
-      const p = progressMap.get(item.id) || null;
-      const state = StorageService.getLearningState(p);
+      const p1 = progressLvl1Map.get(item.id) || null;
+      const p2 = progressLvl2Map.get(item.id) || null;
+      const state1 = StorageService.getLearningState(p1);
+      const state2 = StorageService.getLearningState(p2);
+
+      let p = p1;
+      let state = state1;
+
+      if (levelFilter === 'lvl2' || (levelFilter === 'all' && appLevel === 'lvl2' && state1 === 'Mastered')) {
+        p = p2;
+        state = state2;
+      }
+
       const attempts = p ? p.attempts : 0;
       const accuracy = p ? p.accuracy : 0;
 
       // Level Filter
       if (levelFilter === 'lvl2') {
-        const p1 = progressLvl1Map.get(item.id) || null;
-        const isMasteredInLvl1 = StorageService.getLearningState(p1) === 'Mastered';
+        const isMasteredInLvl1 = state1 === 'Mastered';
         if (!isMasteredInLvl1) return false;
-      } else if (levelFilter === 'lvl1') {
-        // level 1 explicit filter
       }
 
       // Sector Filter
@@ -529,9 +543,70 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           </div>
         ) : (
           sortedVocabulary.map(item => {
-            const p = progressMap.get(item.id) || null;
-            const state = StorageService.getLearningState(p);
+            const p1 = progressLvl1Map.get(item.id) || null;
+            const p2 = progressLvl2Map.get(item.id) || null;
+            const state1 = StorageService.getLearningState(p1);
+            const state2 = StorageService.getLearningState(p2);
+            const isQualifiedL2 = state1 === 'Mastered';
             const isSelected = selectedIds.has(item.id);
+
+            const getBadgeClass = (st: string) => {
+              switch (st) {
+                case 'Mastered':
+                  return 'bg-[#4ADE80] text-black border-black';
+                case 'Needs Work':
+                  return 'bg-[#FF6B6B] text-black border-black';
+                case 'Learning':
+                  return 'bg-[#A855F7] text-white border-black';
+                default:
+                  return 'bg-slate-200 text-black dark:bg-slate-800 dark:text-white border-black';
+              }
+            };
+
+            const renderBadges = () => {
+              const b1 = (
+                <span
+                  key="b1"
+                  className={`shrink-0 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border shadow-[1.5px_1.5px_0px_0px_#000] whitespace-nowrap ${getBadgeClass(
+                    state1
+                  )}`}
+                >
+                  {state1} I
+                </span>
+              );
+
+              const b2 = (
+                <span
+                  key="b2"
+                  className={`shrink-0 px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border shadow-[1.5px_1.5px_0px_0px_#000] whitespace-nowrap ${getBadgeClass(
+                    state2
+                  )}`}
+                >
+                  {state2} II
+                </span>
+              );
+
+              if (levelFilter === 'lvl1') {
+                return <div className="flex flex-col items-end gap-1 shrink-0">{b1}</div>;
+              }
+              if (levelFilter === 'lvl2') {
+                return <div className="flex flex-col items-end gap-1 shrink-0">{b2}</div>;
+              }
+
+              // levelFilter === 'all'
+              if (isQualifiedL2) {
+                return (
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    {b1}
+                    {b2}
+                  </div>
+                );
+              }
+              return <div className="flex flex-col items-end gap-1 shrink-0">{b1}</div>;
+            };
+
+            const isL2ActiveCard = levelFilter === 'lvl2' || (levelFilter === 'all' && appLevel === 'lvl2' && isQualifiedL2);
+            const activeP = isL2ActiveCard ? p2 : p1;
 
             return (
               <div
@@ -564,24 +639,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                     </div>
                   </div>
 
-                  <span
-                    className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase border border-black ${
-                      state === 'Mastered'
-                        ? 'bg-[#4ADE80] text-black'
-                        : state === 'Needs Work'
-                        ? 'bg-[#FF6B6B] text-black'
-                        : state === 'Learning'
-                        ? 'bg-[#A855F7] text-white'
-                        : 'bg-slate-200 text-black dark:bg-slate-800 dark:text-white'
-                    }`}
-                  >
-                    {state}
-                  </span>
+                  {renderBadges()}
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold mt-3 pt-2 border-t-2 border-black/20 dark:border-white/20">
                   <span className="uppercase">Sector: {item.sector}</span>
-                  <span>Acc: {p ? `${Math.round(p.accuracy * 100)}%` : '0%'} ({p?.attempts || 0} tries)</span>
+                  <span>
+                    {isL2ActiveCard ? 'L2 Acc: ' : 'L1 Acc: '}
+                    {activeP ? `${Math.round(activeP.accuracy * 100)}%` : '0%'} ({activeP?.attempts || 0} tries)
+                  </span>
                   <button
                     type="button"
                     onClick={() => setActiveDetailWord(item)}
