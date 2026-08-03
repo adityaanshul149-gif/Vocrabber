@@ -57,7 +57,7 @@ export class QueueService {
         const score2 = StorageService.getWordScore(p2);
         const state2 = StorageService.getLearningState(p2);
         if (mode === 'weak') {
-          return state2 === 'Needs Work' || score2 < 0 || (p2 !== null && p2.attempts > 0 && score2 <= 0);
+          return state2 === 'Needs Work';
         }
         if (mode === 'less') {
           return !p2 || p2.attempts <= 1;
@@ -71,7 +71,7 @@ export class QueueService {
       const state = StorageService.getLearningState(p);
 
       if (mode === 'weak') {
-        return state === 'Needs Work' || score < 0 || (p !== null && p.attempts > 0 && score <= 0);
+        return state === 'Needs Work';
       }
       if (mode === 'less') {
         return !p || p.attempts <= 1;

@@ -1,4 +1,4 @@
-import {
+import type {
   VocabularyRecord,
   ProgressRecord,
   SessionData,
@@ -190,8 +190,8 @@ export class StorageService {
   public static getLearningState(progress: ProgressRecord | null): LearningState {
     if (!progress || progress.attempts === 0) return 'Never Practiced';
     const score = this.getWordScore(progress);
-    if (score < 0 || (progress.attempts > 0 && score === 0 && !progress.mastered)) return 'Needs Work';
-    if (score >= 3 || (progress.consecutiveCorrect >= 2 && score >= 2)) return 'Mastered';
+    if (score > 2) return 'Mastered';
+    if (score < 0) return 'Needs Work';
     return 'Learning';
   }
 
