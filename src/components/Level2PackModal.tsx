@@ -58,8 +58,14 @@ export const Level2PackModal: React.FC<Level2PackModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
-        <div className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-6 rounded-2xl shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#FF2E93] space-y-4">
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 pt-4 pb-24 font-sans animate-in fade-in overflow-y-auto"
+      >
+        <div 
+          onClick={e => e.stopPropagation()}
+          className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-5 rounded-2xl shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#FF2E93] space-y-4 max-h-[calc(100dvh-7.5rem)] my-auto overflow-y-auto"
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b-2.5 border-black dark:border-slate-800 pb-3">
             <div>

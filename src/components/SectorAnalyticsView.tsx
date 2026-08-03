@@ -54,29 +54,35 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
     let needsWork = 0;
     let learning = 0;
     let encountered = 0;
+    let totalPoints = 0;
 
     group.words.forEach(item => {
       const p = item.progress;
       const state = StorageService.getLearningState(p);
+      const score = StorageService.getWordScore(p);
 
       if (p) {
         attempts += p.attempts || 0;
         correct += p.correct || 0;
       }
 
-      if (state !== 'Never Practiced') encountered++;
+      if (state !== 'Never Practiced') {
+        encountered++;
+        totalPoints += score;
+      }
       if (state === 'Mastered') mastered++;
       if (state === 'Needs Work') needsWork++;
       if (state === 'Learning') learning++;
     });
 
+    const averageScore = total > 0 ? totalPoints / total : 0;
     const accuracy = attempts > 0 ? (correct / attempts) * 100 : 0;
     const progressPercent = total > 0 ? (encountered / total) * 100 : 0;
 
     let status = 'all';
     if (mastered === total && total > 0) status = 'completed';
-    else if (needsWork > 0) status = 'attention';
-    else if (mastered > 0 || accuracy >= 80) status = 'nearly';
+    else if (needsWork > 0 || totalPoints < 0) status = 'attention';
+    else if (mastered > 0 || totalPoints >= 5) status = 'nearly';
 
     return {
       name: group.name,
@@ -87,6 +93,8 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
       mastered,
       needsWork,
       learning,
+      totalPoints,
+      averageScore,
       accuracy,
       attempts,
       progressPercent,
@@ -101,7 +109,8 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
   });
 
   filteredSectors.sort((a, b) => {
-    if (sort === 'accuracy') return b.accuracy - a.accuracy;
+    if (sort === 'points-asc') return a.totalPoints - b.totalPoints; // Weakest / lowest score first
+    if (sort === 'points-desc') return b.totalPoints - a.totalPoints;
     if (sort === 'progress') return b.progressPercent - a.progressPercent;
     if (sort === 'total') return b.total - a.total;
     return a.name.localeCompare(b.name);
@@ -169,8 +178,9 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
           onChange={e => setSort(e.target.value)}
           className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600 uppercase"
         >
+          <option value="points-asc">POINTS (WEAKEST FIRST)</option>
+          <option value="points-desc">POINTS (HIGHEST FIRST)</option>
           <option value="alphabetical">ALPHABETICAL</option>
-          <option value="accuracy">ACCURACY</option>
           <option value="progress">PROGRESS</option>
           <option value="total">TOTAL WORDS</option>
         </select>
@@ -193,23 +203,23 @@ export const SectorAnalyticsView: React.FC<SectorAnalyticsViewProps> = ({
             const isExpanded = expandedSector === stats.name;
             const sectorWordsList = stats.words.map(w => w.word);
 
-              const getAccuracyColorBg = (acc: number) => {
-                if (acc >= 90) return 'bg-[#4ADE80] text-black';
-                if (acc >= 70) return 'bg-[#FFE600] text-black';
-                return 'bg-[#FF6B6B] text-black';
-              };
+            const getScoreColorBg = (pts: number) => {
+              if (pts > 0) return 'bg-[#4ADE80] text-black';
+              if (pts < 0) return 'bg-[#FF6B6B] text-black';
+              return 'bg-[#FFE600] text-black';
+            };
 
-              return (
-                <div
-                  key={stats.name}
-                  className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-black font-display text-slate-900 dark:text-white text-base uppercase">{stats.name}</h3>
-                    <span className={`text-xs font-black px-2.5 py-1 border-2 border-black rounded-lg ${getAccuracyColorBg(stats.accuracy)}`}>
-                      {Math.round(stats.accuracy)}% ACC
-                    </span>
-                  </div>
+            return (
+              <div
+                key={stats.name}
+                className="bg-white dark:bg-slate-900 border-2.5 border-black dark:border-white rounded-2xl p-4 space-y-3 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#A855F7] transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="font-black font-display text-slate-900 dark:text-white text-base uppercase">{stats.name}</h3>
+                  <span className={`text-xs font-black px-2.5 py-1 border-2 border-black rounded-lg ${getScoreColorBg(stats.totalPoints)}`}>
+                    {stats.totalPoints > 0 ? `+${stats.totalPoints}` : stats.totalPoints} PTS
+                  </span>
+                </div>
 
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-bold truncate">
                   {sectorWordsList.slice(0, 3).map(w => w.word).join(' · ') || 'No words'}

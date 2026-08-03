@@ -20,10 +20,18 @@ import { Level2PackModal } from './components/Level2PackModal';
 import { LibraryView } from './components/LibraryView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { SectorAnalyticsView } from './components/SectorAnalyticsView';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsView } from './components/SettingsView';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabName>('home');
+  const [activeTab, setActiveTab] = useState<TabName>(() => {
+    const saved = localStorage.getItem('voccrab_active_tab') as TabName;
+    return (saved && ['home', 'library', 'analytics', 'sector', 'settings'].includes(saved)) ? saved : 'home';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('voccrab_active_tab', activeTab);
+  }, [activeTab]);
+
   const [vocabulary, setVocabulary] = useState<VocabularyRecord[]>([]);
   const [progress, setProgress] = useState<ProgressRecord[]>([]);
   const [session, setSession] = useState<SessionData | null>(null);
@@ -58,13 +66,14 @@ export default function App() {
     localStorage.setItem('voccrab_theme', theme);
   }, [theme, appLevel]);
 
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
-
   // Practice state
-  const [isPracticeActive, setIsPracticeActive] = useState(false);
-  const [practiceMode, setPracticeMode] = useState<PracticeMode>('random');
+  const [isPracticeActive, setIsPracticeActive] = useState<boolean>(() => {
+    return localStorage.getItem('voccrab_practice_active') === 'true';
+  });
+  const [practiceMode, setPracticeMode] = useState<PracticeMode>(() => {
+    const saved = localStorage.getItem('voccrab_practice_mode') as PracticeMode;
+    return saved || 'random';
+  });
   const [selectedPracticeSectors, setSelectedPracticeSectors] = useState<Set<string>>(new Set());
   const [currentWord, setCurrentWord] = useState<VocabularyRecord | null>(null);
   const [activeQueue, setActiveQueue] = useState<VocabularyRecord[]>([]);
@@ -74,42 +83,58 @@ export default function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSentenceModalOpen, setIsSentenceModalOpen] = useState(false);
   const [isLevel2ModalOpen, setIsLevel2ModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Refresh local data state
   const reloadData = useCallback(() => {
     StorageService.initialize();
-    setVocabulary(StorageService.getVocabulary());
-    setProgress(StorageService.getProgress(appLevel));
-    setSession(StorageService.getSession());
+    const voc = StorageService.getVocabulary();
+    const prog = StorageService.getProgress(appLevel);
+    const sess = StorageService.getSession();
+    setVocabulary(voc);
+    setProgress(prog);
+    setSession(sess);
+
+    // Restore active practice session state if preserved
+    const savedActive = localStorage.getItem('voccrab_practice_active') === 'true';
+    if (savedActive && voc.length > 0) {
+      const savedWordId = localStorage.getItem('voccrab_current_word_id') || sess?.currentWordId;
+      const targetWord = savedWordId ? voc.find(v => v.id === savedWordId) : null;
+      if (targetWord) {
+        setCurrentWord(targetWord);
+        setIsPracticeActive(true);
+        if (sess?.remainingQueue && sess.remainingQueue.length > 0) {
+          const queueWords = voc.filter(v => sess.remainingQueue.includes(v.id));
+          setActiveQueue(queueWords);
+        }
+      }
+    }
   }, [appLevel]);
 
   useEffect(() => {
     reloadData();
   }, [reloadData]);
 
-  // Tab change handler
-  const handleTabChange = (tab: TabName) => {
-    if (isPracticeActive) {
-      if (
-        !window.confirm(
-          'Leave practice session? Your current progress in this session will be saved.'
-        )
-      ) {
-        return;
+  // Save background visibility state
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        if (isPracticeActive && currentWord) {
+          localStorage.setItem('voccrab_practice_active', 'true');
+          localStorage.setItem('voccrab_current_word_id', currentWord.id);
+          localStorage.setItem('voccrab_practice_mode', practiceMode);
+        }
       }
-      setIsPracticeActive(false);
-    }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isPracticeActive, currentWord, practiceMode]);
 
+  // Tab change handler (preserves practice session without wiping memory)
+  const handleTabChange = (tab: TabName) => {
     if (tab === 'import') {
       setIsImportModalOpen(true);
       return;
     }
-    if (tab === 'settings') {
-      setIsSettingsModalOpen(true);
-      return;
-    }
-
     setActiveTab(tab);
   };
 
@@ -126,6 +151,7 @@ export default function App() {
     if (targetWords.length === 0) return;
 
     setPracticeMode('random');
+    localStorage.setItem('voccrab_practice_mode', 'random');
     const queue = QueueService.buildQueue(targetWords, undefined, appLevel);
 
     const newSessionData: SessionData = {
@@ -149,11 +175,16 @@ export default function App() {
     setActiveQueue(queue.slice(1));
     setCurrentWord(queue[0]);
     setIsPracticeActive(true);
+    setActiveTab('home');
+
+    localStorage.setItem('voccrab_practice_active', 'true');
+    localStorage.setItem('voccrab_current_word_id', queue[0].id);
   };
 
   // Start practice session
   const handleStartPracticeSession = (mode: PracticeMode, sectors: Set<string>) => {
     setPracticeMode(mode);
+    localStorage.setItem('voccrab_practice_mode', mode);
     setSelectedPracticeSectors(sectors);
     setIsConfigModalOpen(false);
 
@@ -187,6 +218,10 @@ export default function App() {
     setActiveQueue(queue.slice(1));
     setCurrentWord(queue[0]);
     setIsPracticeActive(true);
+    setActiveTab('home');
+
+    localStorage.setItem('voccrab_practice_active', 'true');
+    localStorage.setItem('voccrab_current_word_id', queue[0].id);
   };
 
   // Record answer review
@@ -244,17 +279,33 @@ export default function App() {
     if (nextQueue.length === 0) {
       alert('All words in queue completed!');
       setIsPracticeActive(false);
+      localStorage.removeItem('voccrab_practice_active');
+      localStorage.removeItem('voccrab_current_word_id');
       return;
     }
 
     const nextWord = nextQueue[0];
     setCurrentWord(nextWord);
     setActiveQueue(nextQueue.slice(1));
+
+    localStorage.setItem('voccrab_current_word_id', nextWord.id);
+    if (session) {
+      const updatedSess = {
+        ...session,
+        currentWordId: nextWord.id,
+        remainingQueue: nextQueue.slice(1).map(w => w.id),
+        updatedAt: new Date().toISOString()
+      };
+      StorageService.setSession(updatedSess);
+      setSession(updatedSess);
+    }
   };
 
   // End practice session
   const handleEndPractice = () => {
     setIsPracticeActive(false);
+    localStorage.removeItem('voccrab_practice_active');
+    localStorage.removeItem('voccrab_current_word_id');
     setActiveTab('home');
   };
 
@@ -282,24 +333,25 @@ export default function App() {
     v => StorageService.getLearningState(progressMap.get(v.id) || null) === 'Needs Work'
   ).length;
 
-  let totalAttempts = 0;
-  let totalCorrect = 0;
+  let totalPoints = 0;
+  let practicedWordsCount = 0;
   activeLevelVocabulary.forEach(v => {
     const p = progressMap.get(v.id);
-    if (p) {
-      totalAttempts += p.attempts || 0;
-      totalCorrect += p.correct || 0;
+    if (p && p.attempts > 0) {
+      practicedWordsCount += 1;
+      totalPoints += StorageService.getWordScore(p);
     }
   });
-  const accuracyPercent = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
+  const averageScore = practicedWordsCount > 0 ? totalPoints / practicedWordsCount : 0;
 
   const isLvl2 = appLevel === 'lvl2';
+  const showPracticeScreen = isPracticeActive && currentWord && activeTab === 'home';
 
   return (
     <div className={`min-h-screen flex flex-col font-sans selection:bg-[#7C3AED] selection:text-white transition-colors ${
       isLvl2 ? 'bg-[#0B0F19] text-slate-100' : 'bg-[#F6F5FB] dark:bg-slate-950 text-[#1E1B2E] dark:text-slate-100'
     }`}>
-      {!isPracticeActive && (
+      {!showPracticeScreen && (
         <Header
           appLevel={appLevel}
           onToggleLevel={handleToggleLevel}
@@ -307,8 +359,8 @@ export default function App() {
         />
       )}
 
-      <main className={`flex-1 w-full mx-auto ${isPracticeActive ? 'p-0' : 'max-w-md px-4 py-5 pb-28'}`}>
-        {isPracticeActive && currentWord ? (
+      <main className={`flex-1 w-full mx-auto ${showPracticeScreen ? 'p-0' : 'max-w-md px-4 py-5 pb-28'}`}>
+        {showPracticeScreen ? (
           <PracticeScreen
             currentWord={currentWord}
             modeTitle={
@@ -332,7 +384,8 @@ export default function App() {
                 vocabularyCount={vocabularyCount}
                 masteredCount={masteredCount}
                 needsWorkCount={needsWorkCount}
-                accuracyPercent={accuracyPercent}
+                totalPoints={totalPoints}
+                averageScore={averageScore}
                 appLevel={appLevel}
                 onOpenPracticeConfig={handleOpenPracticeConfig}
               />
@@ -365,12 +418,20 @@ export default function App() {
                 onDataChanged={reloadData}
               />
             )}
+
+            {activeTab === 'settings' && (
+              <SettingsView
+                onRestoreComplete={reloadData}
+                onOpenImportModal={() => setIsImportModalOpen(true)}
+                onOpenSentenceModal={() => setIsSentenceModalOpen(true)}
+              />
+            )}
           </>
         )}
       </main>
 
-      {/* Navigation Bar - Hidden during practice mode for immersive full screen */}
-      {!isPracticeActive && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
+      {/* Navigation Bar - Hidden during practice mode screen for immersive practice */}
+      {!showPracticeScreen && <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />}
 
       {/* Modals */}
       <PracticeConfigModal
@@ -398,17 +459,7 @@ export default function App() {
         onClose={() => setIsLevel2ModalOpen(false)}
         onUpdateComplete={reloadData}
       />
-
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        onRestoreComplete={reloadData}
-        onOpenImportModal={() => setIsImportModalOpen(true)}
-        onOpenSentenceModal={() => setIsSentenceModalOpen(true)}
-        onOpenLevel2Modal={() => setIsLevel2ModalOpen(true)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
     </div>
   );
 }
+

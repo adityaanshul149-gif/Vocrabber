@@ -94,6 +94,36 @@ export class StorageService {
     return this.write(KEYS.vocabulary, records);
   }
 
+  public static updateVocabularyRecord(oldId: string, updated: VocabularyRecord): boolean {
+    const list = this.getVocabulary();
+    const idx = list.findIndex(item => item.id === oldId);
+    if (idx === -1) {
+      list.push(updated);
+    } else {
+      list[idx] = { ...updated, updatedAt: new Date().toISOString() };
+    }
+    const saved = this.setVocabulary(list);
+
+    // If ID changed, migrate progress records
+    if (saved && oldId !== updated.id) {
+      for (const level of ['lvl1', 'lvl2'] as AppLevel[]) {
+        const progress = this.getProgress(level);
+        let changed = false;
+        const updatedProgress = progress.map(p => {
+          if (p.vocabularyId === oldId) {
+            changed = true;
+            return { ...p, vocabularyId: updated.id };
+          }
+          return p;
+        });
+        if (changed) {
+          this.setProgress(updatedProgress, level);
+        }
+      }
+    }
+    return saved;
+  }
+
   public static getProgress(level: AppLevel = 'lvl1'): ProgressRecord[] {
     const key = level === 'lvl2' ? KEYS.progressLvl2 : KEYS.progress;
     const data = this.read<ProgressRecord[]>(key);
@@ -132,6 +162,7 @@ export class StorageService {
       attempts: 0,
       correct: 0,
       accuracy: 0,
+      score: 0,
       history: [],
       consecutiveCorrect: 0,
       lastReviewed: null,
@@ -149,14 +180,18 @@ export class StorageService {
     };
   }
 
+  public static getWordScore(progress: ProgressRecord | null): number {
+    if (!progress || progress.attempts === 0) return 0;
+    if (progress.score !== undefined && progress.score !== null) return progress.score;
+    // Fallback calculation from correct vs wrong attempts for existing records
+    return progress.correct - (progress.attempts - progress.correct);
+  }
+
   public static getLearningState(progress: ProgressRecord | null): LearningState {
     if (!progress || progress.attempts === 0) return 'Never Practiced';
-    const stored = progress.queueMetadata?.learningState;
-    if (stored && ['Never Practiced', 'Learning', 'Needs Work', 'Mastered'].includes(stored)) {
-      return stored as LearningState;
-    }
-    if (progress.mastered) return 'Mastered';
-    if (progress.weak || progress.accuracy < 0.5) return 'Needs Work';
+    const score = this.getWordScore(progress);
+    if (score < 0 || (progress.attempts > 0 && score === 0 && !progress.mastered)) return 'Needs Work';
+    if (score >= 3 || (progress.consecutiveCorrect >= 2 && score >= 2)) return 'Mastered';
     return 'Learning';
   }
 
@@ -169,6 +204,12 @@ export class StorageService {
     record.attempts += 1;
     if (wasCorrect) record.correct += 1;
     record.accuracy = record.attempts > 0 ? record.correct / record.attempts : 0;
+    
+    const currentScore = record.score !== undefined && record.score !== null
+      ? record.score
+      : ((record.correct - (wasCorrect ? 1 : 0)) - (prevAttempts - (record.correct - (wasCorrect ? 1 : 0))));
+    
+    record.score = wasCorrect ? currentScore + 1 : currentScore - 1;
     record.consecutiveCorrect = wasCorrect ? record.consecutiveCorrect + 1 : 0;
     const now = new Date().toISOString();
     record.lastReviewed = now;
@@ -186,13 +227,11 @@ export class StorageService {
       }
     ];
 
-    const state: LearningState = wasCorrect
-      ? (prevAttempts === 0 || record.consecutiveCorrect >= 2 ? 'Mastered' : 'Learning')
-      : 'Needs Work';
+    const state: LearningState = this.getLearningState(record);
 
     record.queueMetadata = { ...(record.queueMetadata || {}), learningState: state };
     record.mastered = state === 'Mastered';
-    record.weak = state === 'Needs Work';
+    record.weak = state === 'Needs Work' || record.score < 0;
     record.updatedAt = now;
 
     map.set(vocabularyId, record);

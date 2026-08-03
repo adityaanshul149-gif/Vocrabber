@@ -30,6 +30,7 @@ export interface VocabularyRecord {
   definition: string;
   exampleUsage: string;
   sentences: Sentence[];
+  phonetic?: string;
   level2Distractors?: string[];
   createdAt: string;
   updatedAt: string;
@@ -50,6 +51,7 @@ export interface ProgressRecord {
   attempts: number;
   correct: number;
   accuracy: number;
+  score: number;
   history: ReviewHistoryItem[];
   consecutiveCorrect: number;
   lastReviewed: string | null;

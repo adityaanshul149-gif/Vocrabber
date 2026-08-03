@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PracticeMode, VocabularyRecord, AppLevel } from '../types';
 import { QueueService } from '../services/queue';
+import { StorageService } from '../services/storage';
 import { VALID_SECTORS } from '../data/defaultVocabulary';
 import { X, Play } from 'lucide-react';
 
@@ -19,15 +20,35 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
   onClose,
   onStart
 }) => {
-  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set(VALID_SECTORS));
+  const [selectedSectors, setSelectedSectors] = useState<Set<string>>(new Set());
   const [eligibleList, setEligibleList] = useState<VocabularyRecord[]>([]);
+
+  const displayedSectors = useMemo(() => {
+    const set = new Set<string>();
+    eligibleList.forEach(w => {
+      if (w.sector) set.add(w.sector);
+    });
+    const allVocab = StorageService.getVocabulary();
+    allVocab.forEach(w => {
+      if (w.sector) set.add(w.sector);
+    });
+    if (set.size === 0) {
+      VALID_SECTORS.forEach(s => set.add(s));
+    }
+    return Array.from(set).sort();
+  }, [eligibleList]);
 
   useEffect(() => {
     if (isOpen) {
       const eligible = QueueService.getEligibleWords(mode, undefined, appLevel as AppLevel);
-      const availableSectors = new Set(eligible.map(w => w.sector));
-      setSelectedSectors(availableSectors.size > 0 ? availableSectors : new Set<string>(VALID_SECTORS));
+      const availableSectors = new Set(eligible.map(w => w.sector).filter(Boolean));
       setEligibleList(eligible);
+      if (availableSectors.size > 0) {
+        setSelectedSectors(availableSectors);
+      } else {
+        const allVocabSectors = new Set(StorageService.getVocabulary().map(w => w.sector).filter(Boolean));
+        setSelectedSectors(allVocabSectors.size > 0 ? allVocabSectors : new Set(VALID_SECTORS));
+      }
     }
   }, [isOpen, mode, appLevel]);
 
@@ -50,8 +71,14 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
   const selectedAvailableCount = Array.from(selectedSectors).filter(s => eligibleList.some(w => w.sector === s)).length;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans animate-in fade-in">
-      <div className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-6 rounded-2xl space-y-5 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#A855F7]">
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 pt-4 pb-24 font-sans animate-in fade-in overflow-y-auto"
+    >
+      <div 
+        onClick={e => e.stopPropagation()}
+        className="bg-white dark:bg-slate-900 border-3 border-black dark:border-white max-w-md w-full p-5 rounded-2xl space-y-4 shadow-[6px_6px_0px_0px_#000] dark:shadow-[6px_6px_0px_0px_#A855F7] max-h-[calc(100dvh-7.5rem)] my-auto overflow-y-auto"
+      >
         <div className="flex items-center justify-between border-b-2.5 border-black dark:border-slate-800 pb-3">
           <div>
             <span className="text-[10px] font-black uppercase text-purple-700 dark:text-purple-400 tracking-wider block">
@@ -79,7 +106,7 @@ export const PracticeConfigModal: React.FC<PracticeConfigModalProps> = ({
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
-              {VALID_SECTORS.map(sector => {
+              {displayedSectors.map(sector => {
                 const countInSector = eligibleList.filter(w => w.sector === sector).length;
                 const isAvailable = countInSector > 0;
                 const isChecked = selectedSectors.has(sector);

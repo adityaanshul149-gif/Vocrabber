@@ -3,30 +3,29 @@ import { StorageService } from './storage';
 
 export class QueueService {
   private static calculatePriority(progress: ProgressRecord | null): number {
-    if (!progress) return 30; // High priority for unpracticed words
+    if (!progress || progress.attempts === 0) return 30; // High priority for unpracticed words
 
-    const attempts = progress.attempts || 0;
-    const accuracy = progress.accuracy || 0;
+    const score = StorageService.getWordScore(progress);
     const state = StorageService.getLearningState(progress);
 
     const recent = progress.history?.length ? progress.history[progress.history.length - 1] : null;
-    const recentlyWrong = recent && !recent.wasCorrect ? 8 : 0;
-    const recentlyCorrect = recent && recent.wasCorrect ? -4 : 0;
+    const recentlyWrong = recent && !recent.wasCorrect ? 12 : 0;
+    const recentlyCorrect = recent && recent.wasCorrect ? -6 : 0;
 
     let stateWeight = 20;
-    if (state === 'Needs Work') stateWeight = 35;
-    else if (state === 'Learning') stateWeight = 25;
+    if (state === 'Needs Work') stateWeight = 40;
+    else if (state === 'Learning') stateWeight = 20;
     else if (state === 'Mastered') stateWeight = 5;
 
-    const unpracticedBonus = attempts === 0 ? 20 : 0;
+    // Words with negative scores get a strong priority boost! (e.g., -4 pts => +24 priority)
+    const negativeScoreBoost = score < 0 ? Math.abs(score) * 6 : 0;
 
     return Math.max(
       1,
       10 +
         stateWeight +
-        unpracticedBonus +
-        (1 - accuracy) * 15 +
-        Math.max(0, 10 - attempts) +
+        negativeScoreBoost +
+        Math.max(0, 10 - score) +
         recentlyWrong +
         recentlyCorrect
     );
@@ -55,9 +54,10 @@ export class QueueService {
         }
 
         const p2 = progressLvl2Map.get(word.id) || null;
+        const score2 = StorageService.getWordScore(p2);
         const state2 = StorageService.getLearningState(p2);
         if (mode === 'weak') {
-          return state2 === 'Needs Work' || (p2 !== null && p2.attempts > 0 && p2.accuracy < 0.5);
+          return state2 === 'Needs Work' || score2 < 0 || (p2 !== null && p2.attempts > 0 && score2 <= 0);
         }
         if (mode === 'less') {
           return !p2 || p2.attempts <= 1;
@@ -67,10 +67,11 @@ export class QueueService {
 
       // Level 1 logic
       const p = progressLvl1Map.get(word.id) || null;
+      const score = StorageService.getWordScore(p);
       const state = StorageService.getLearningState(p);
 
       if (mode === 'weak') {
-        return state === 'Needs Work' || (p !== null && p.attempts > 0 && p.accuracy < 0.5);
+        return state === 'Needs Work' || score < 0 || (p !== null && p.attempts > 0 && score <= 0);
       }
       if (mode === 'less') {
         return !p || p.attempts <= 1;

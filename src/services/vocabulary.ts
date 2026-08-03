@@ -26,9 +26,21 @@ export interface SentencePackResult {
 
 export class VocabularyService {
   private static canonicalSector(value: string): string {
-    const norm = String(value || '').replace(/^\uFEFF/, '').trim().toLowerCase();
-    const found = VALID_SECTORS.find(s => s.toLowerCase() === norm);
-    return found || 'General';
+    const raw = String(value || '').replace(/^\uFEFF/, '').trim();
+    if (!raw) return 'General';
+
+    try {
+      const currentVocab = StorageService.getVocabulary();
+      const allKnown = Array.from(new Set([...currentVocab.map(v => v.sector).filter(Boolean), ...VALID_SECTORS]));
+      const found = allKnown.find(s => s.toLowerCase() === raw.toLowerCase());
+      if (found) return found;
+    } catch {
+      // fallback if storage not ready
+      const foundDefault = VALID_SECTORS.find(s => s.toLowerCase() === raw.toLowerCase());
+      if (foundDefault) return foundDefault;
+    }
+
+    return raw;
   }
 
   public static parsePipeImport(text: string): ParseResult {

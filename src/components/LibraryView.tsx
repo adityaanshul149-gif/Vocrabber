@@ -4,6 +4,8 @@ import { StorageService } from '../services/storage';
 import { VocabularyService } from '../services/vocabulary';
 import { WordDetailModal } from './WordDetailModal';
 import { ExportModal } from './ExportModal';
+import { PronunciationButton } from './PronunciationButton';
+import { getPronunciation } from '../services/pronunciation';
 import {
   Search,
   Download,
@@ -45,7 +47,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [sectorFilter, setSectorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [encounteredFilter, setEncounteredFilter] = useState('all');
-  const [accuracyFilter, setAccuracyFilter] = useState('all');
+  const [scoreFilter, setScoreFilter] = useState('all');
   const [attemptsFilter, setAttemptsFilter] = useState('all');
 
   // Sort state
@@ -54,8 +56,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     | 'word-desc'
     | 'id-asc'
     | 'id-desc'
-    | 'accuracy-asc'
-    | 'accuracy-desc'
+    | 'score-asc'
+    | 'score-desc'
     | 'attempts-asc'
     | 'attempts-desc'
     | 'reviewed-desc'
@@ -125,7 +127,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       }
 
       const attempts = p ? p.attempts : 0;
-      const accuracy = p ? p.accuracy : 0;
+      const score = p ? StorageService.getWordScore(p) : 0;
 
       // Level Filter
       if (levelFilter === 'lvl2') {
@@ -162,11 +164,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         if (encounteredFilter === 'never' && attempts > 0) return false;
       }
 
-      // Accuracy Filter
-      if (accuracyFilter !== 'all') {
-        if (accuracyFilter === 'low' && (attempts === 0 || accuracy >= 0.5)) return false;
-        if (accuracyFilter === 'med' && (accuracy < 0.5 || accuracy >= 0.8)) return false;
-        if (accuracyFilter === 'high' && accuracy < 0.8) return false;
+      // Score Filter
+      if (scoreFilter !== 'all') {
+        if (scoreFilter === 'negative' && score >= 0) return false;
+        if (scoreFilter === 'zero' && (attempts === 0 || score !== 0)) return false;
+        if (scoreFilter === 'positive' && score <= 0) return false;
+        if (scoreFilter === 'high' && score < 3) return false;
       }
 
       // Attempts Filter
@@ -186,13 +189,40 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     sectorFilter,
     statusFilter,
     encounteredFilter,
-    accuracyFilter,
+    scoreFilter,
     attemptsFilter
   ]);
 
   // Sort logic
   const sortedVocabulary = useMemo(() => {
     const list = [...filteredVocabulary];
+
+    // If there is a search query, rank prefix matches on word and ID first!
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+
+      const getSearchScore = (item: VocabularyRecord) => {
+        const wordLower = item.word.toLowerCase();
+        const idLower = item.id.toLowerCase();
+
+        if (wordLower === q) return 100;
+        if (wordLower.startsWith(q)) return 90;
+        if (idLower === q) return 85;
+        if (idLower.startsWith(q)) return 80;
+        if (wordLower.includes(q)) return 70;
+        if (idLower.includes(q)) return 60;
+        return 50;
+      };
+
+      return list.sort((a, b) => {
+        const scoreA = getSearchScore(a);
+        const scoreB = getSearchScore(b);
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA; // Higher relevance first
+        }
+        return a.word.localeCompare(b.word);
+      });
+    }
 
     if (sortKey === 'random') {
       // Deterministic shuffle view
@@ -203,8 +233,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
       const pa = progressMap.get(a.id) || null;
       const pb = progressMap.get(b.id) || null;
 
-      const accA = pa ? pa.accuracy : 0;
-      const accB = pb ? pb.accuracy : 0;
+      const scoreA = pa ? StorageService.getWordScore(pa) : 0;
+      const scoreB = pb ? StorageService.getWordScore(pb) : 0;
       const attA = pa ? pa.attempts : 0;
       const attB = pb ? pb.attempts : 0;
 
@@ -223,10 +253,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           return a.id.localeCompare(b.id);
         case 'id-desc':
           return b.id.localeCompare(a.id);
-        case 'accuracy-asc':
-          return accA - accB;
-        case 'accuracy-desc':
-          return accB - accA;
+        case 'score-asc':
+          return scoreA - scoreB;
+        case 'score-desc':
+          return scoreB - scoreA;
         case 'attempts-asc':
           return attA - attB;
         case 'attempts-desc':
@@ -412,7 +442,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               type="search"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search words, definitions, examples..."
+              placeholder="Search by word, word ID (e.g. VOC000001), definition..."
               className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-500 font-bold focus:outline-none focus:border-purple-600"
             />
             {searchQuery && (
@@ -453,6 +483,19 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
               <option value="needs-work">Needs Work</option>
               <option value="mastered">Mastered</option>
             </select>
+
+            {/* Score Filter */}
+            <select
+              value={scoreFilter}
+              onChange={e => setScoreFilter(e.target.value)}
+              className="bg-slate-50 dark:bg-slate-800 border-2 border-black dark:border-slate-700 rounded-xl px-2.5 py-2 text-xs text-slate-900 dark:text-slate-100 font-black focus:outline-none focus:border-purple-600"
+            >
+              <option value="all">All Points</option>
+              <option value="negative">Negative Points (&lt; 0 pts)</option>
+              <option value="zero">Zero Points (0 pts)</option>
+              <option value="positive">Positive Points (&gt; 0 pts)</option>
+              <option value="high">Mastered Score (≥ 3 pts)</option>
+            </select>
           </div>
         </div>
 
@@ -467,8 +510,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
             >
               <option value="word-asc">Alphabetical (A - Z)</option>
               <option value="word-desc">Alphabetical (Z - A)</option>
-              <option value="accuracy-desc">Accuracy (High to Low)</option>
-              <option value="accuracy-asc">Accuracy (Low to High)</option>
+              <option value="score-asc">Points Score (Weakest First)</option>
+              <option value="score-desc">Points Score (Highest First)</option>
               <option value="attempts-desc">Most Attempted</option>
               <option value="random">Random Order</option>
             </select>
@@ -626,14 +669,22 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                       className="mt-1 accent-black w-4 h-4 cursor-pointer rounded border-2 border-black"
                     />
                     <div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveDetailWord(item)}
-                        className="text-base font-black font-display uppercase hover:underline text-left cursor-pointer"
-                      >
-                        {item.word}
-                      </button>
-                      <p className="text-xs font-bold opacity-90 line-clamp-1 mt-0.5">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setActiveDetailWord(item)}
+                          className="text-base font-black font-display uppercase hover:underline hover:text-purple-600 dark:hover:text-purple-400 text-left cursor-pointer"
+                        >
+                          {item.word}
+                        </button>
+                      </div>
+                      <div className="text-[11px] italic font-serif text-purple-700 dark:text-purple-300 font-medium leading-none mt-0.5">
+                        {getPronunciation(item.word, item.phonetic)}
+                      </div>
+                      <div className="mt-1">
+                        <PronunciationButton word={item.word} size="sm" />
+                      </div>
+                      <p className="text-xs font-bold opacity-90 line-clamp-1 mt-1">
                         {item.definition}
                       </p>
                     </div>
@@ -643,11 +694,25 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-bold mt-3 pt-2 border-t-2 border-black/20 dark:border-white/20">
-                  <span className="uppercase">Sector: {item.sector}</span>
-                  <span>
-                    {isL2ActiveCard ? 'L2 Acc: ' : 'L1 Acc: '}
-                    {activeP ? `${Math.round(activeP.accuracy * 100)}%` : '0%'} ({activeP?.attempts || 0} tries)
-                  </span>
+                  <span className="uppercase text-slate-700 dark:text-slate-300">Sector: {item.sector}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-600 dark:text-slate-400 font-extrabold">{isL2ActiveCard ? 'L2' : 'L1'}:</span>
+                    {(() => {
+                      const scoreVal = activeP ? StorageService.getWordScore(activeP) : 0;
+                      const scoreText = scoreVal > 0 ? `+${scoreVal} pts` : `${scoreVal} pts`;
+                      const colorClass = scoreVal < 0 
+                        ? 'bg-[#FF6B6B] text-black border-black'
+                        : scoreVal > 0
+                        ? 'bg-[#4ADE80] text-black border-black'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 border-black/30 dark:border-white/30';
+                      return (
+                        <span className={`px-2 py-0.5 rounded-md border text-[10px] font-black ${colorClass}`}>
+                          {scoreText}
+                        </span>
+                      );
+                    })()}
+                    <span className="text-[10px] text-slate-500 font-bold">({activeP?.attempts || 0} tries)</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActiveDetailWord(item)}

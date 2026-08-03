@@ -6,7 +6,8 @@ interface HomeViewProps {
   vocabularyCount: number;
   masteredCount: number;
   needsWorkCount: number;
-  accuracyPercent: number;
+  totalPoints: number;
+  averageScore: number;
   appLevel?: AppLevel;
   onOpenPracticeConfig: (mode: PracticeMode) => void;
 }
@@ -15,12 +16,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
   vocabularyCount,
   masteredCount,
   needsWorkCount,
-  accuracyPercent,
+  totalPoints,
+  averageScore,
   appLevel = 'lvl1',
   onOpenPracticeConfig
 }) => {
   const isLvl2 = appLevel === 'lvl2';
   const masteringProgress = vocabularyCount > 0 ? (masteredCount / vocabularyCount) * 100 : 0;
+  const formattedNetPoints = totalPoints > 0 ? `+${totalPoints}` : `${totalPoints}`;
 
   return (
     <div className="space-y-6 font-sans max-w-md mx-auto">
@@ -72,28 +75,32 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <button
             type="button"
             onClick={() => onOpenPracticeConfig('weak')}
-            className="p-3.5 bg-[#FF6B6B] hover:bg-[#FF5252] text-black border-2.5 border-black rounded-2xl shadow-[3.5px_3.5px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center gap-2.5 cursor-pointer text-left font-extrabold"
+            className="p-4 bg-[#FF6B6B] hover:bg-[#FF5252] text-black border-2.5 border-black rounded-2xl shadow-[3.5px_3.5px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center gap-3 cursor-pointer text-left font-extrabold"
           >
-            <div className="w-9 h-9 rounded-xl bg-white border-2 border-black text-rose-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white border-2 border-black text-rose-700 flex items-center justify-center shrink-0">
               <AlertCircle className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <div>
-              <span className="text-xs font-black block leading-tight uppercase">Weak Words</span>
-              <span className="text-[10px] text-black/80 font-bold">Focus on errors</span>
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase text-black/80 block truncate">Weak Words</span>
+              <span className="text-xs font-black text-black block leading-none mt-0.5 truncate">
+                Low Pts
+              </span>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => onOpenPracticeConfig('less')}
-            className="p-3.5 bg-[#FFC72C] hover:bg-[#FFB700] text-black border-2.5 border-black rounded-2xl shadow-[3.5px_3.5px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center gap-2.5 cursor-pointer text-left font-extrabold"
+            className="p-4 bg-[#FFC72C] hover:bg-[#FFB700] text-black border-2.5 border-black rounded-2xl shadow-[3.5px_3.5px_0px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_#000] transition-all flex items-center gap-3 cursor-pointer text-left font-extrabold"
           >
-            <div className="w-9 h-9 rounded-xl bg-white border-2 border-black text-amber-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white border-2 border-black text-amber-700 flex items-center justify-center shrink-0">
               <Zap className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <div>
-              <span className="text-xs font-black block leading-tight uppercase">Unseen Words</span>
-              <span className="text-[10px] text-black/80 font-bold">Rare & low attempts</span>
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase text-black/80 block truncate">Unseen Words</span>
+              <span className="text-xs font-black text-black block leading-none mt-0.5 truncate">
+                Rare Tries
+              </span>
             </div>
           </button>
         </div>
@@ -145,15 +152,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
 
-          {/* Accuracy */}
-          <div className="bg-[#38BDF8] text-black border-2.5 border-black rounded-2xl p-4 shadow-[3.5px_3.5px_0px_0px_#000] flex items-center gap-3">
+          {/* Points / Score */}
+          <div className={`${totalPoints < 0 ? 'bg-[#FF6B6B]' : totalPoints > 0 ? 'bg-[#4ADE80]' : 'bg-[#38BDF8]'} text-black border-2.5 border-black rounded-2xl p-4 shadow-[3.5px_3.5px_0px_0px_#000] flex items-center gap-3`}>
             <div className="w-10 h-10 rounded-xl bg-white border-2 border-black text-blue-700 flex items-center justify-center font-bold text-lg">
               <Award className="w-5 h-5 stroke-[2.5]" />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase text-black/80 block">Accuracy 🎯</span>
+              <span className="text-[10px] font-black uppercase text-black/80 block">Net Points 🏆</span>
               <strong className="text-2xl font-black font-display text-black block leading-none mt-0.5">
-                {Math.round(accuracyPercent)}%
+                {formattedNetPoints} <span className="text-xs font-bold">pts</span>
               </strong>
             </div>
           </div>
